@@ -7,7 +7,7 @@
     <title>내 곡괭이 어떡하냐 진짜</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Black+Han+Sans&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Black+Han+Sans&family=VT323&display=swap" rel="stylesheet" />
     <style>
       html, body {
         margin: 0; padding: 0;
@@ -69,7 +69,7 @@
         line-height: 1;
         letter-spacing: 2px;
       }
-      .timer.warn { color: #ff6b3d; animation: pulse 0.4s infinite alternate; }
+      .timer.warn { color: #c44226; animation: pulse 0.4s infinite alternate; }
       @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
 
       .ore-counter {
@@ -121,8 +121,9 @@
         backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center;
         opacity: 0;
-        pointer-events: none !important; /* 다른 selector 가 auto 로 덮어쓰지 못하게 */
+        pointer-events: none !important;
         transition: opacity 0.25s;
+        z-index: 200;     /* villageScreen(50)/loginScreen(100) 위로 */
       }
       .panel-bg.show { opacity: 1; pointer-events: auto !important; }
 
@@ -137,7 +138,7 @@
       .panel h1 {
         font-family: 'Black Han Sans', sans-serif;
         font-size: 110px; margin: 0 0 30px 0;
-        text-align: center; color: #ff6b3d;
+        text-align: center; color: #c44226;
         text-shadow: 6px 6px 0 #1a1006;
         letter-spacing: 2px;
       }
@@ -153,7 +154,7 @@
       .panel .row .lv { color: #4ad7d1; font-family: 'Black Han Sans', sans-serif; }
       .btn {
         display: block; width: 100%;
-        background: #ff6b3d;
+        background: #c44226;
         border: 6px solid #1a1006;
         border-radius: 28px;
         padding: 28px 0;
@@ -184,7 +185,7 @@
         background: rgba(255,255,255,0.15);
         border: 3px solid #1a1006;
       }
-      .upgrade .pip.on { background: #ff6b3d; }
+      .upgrade .pip.on { background: #c44226; }
       .upgrade button {
         background: #4ad7d1; border: 5px solid #1a1006; border-radius: 20px;
         font-family: 'Black Han Sans', sans-serif;
@@ -218,12 +219,310 @@
         font-family: 'Black Han Sans', sans-serif;
         font-size: 80px;
       }
+
+      /* === Login Screen === */
+      #loginScreen {
+        position: absolute; inset: 0;
+        /* 배경 이미지(타이틀/행성/캐릭터 포함된 일러스트) — 1080x1920. */
+        background: #000 url('login-bg.jpg') center center / cover no-repeat;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: flex-end;
+        padding-bottom: 140px;
+        z-index: 100;
+        transition: opacity 0.4s;
+      }
+      #loginScreen.hidden { opacity: 0; pointer-events: none; }
+
+      /* 로그인 박스 — Watchmen 풍 톤. 검정 박스 + 주황 아웃라인 + 바깥 흰 아웃라인. */
+      .login-box {
+        position: relative;
+        overflow: hidden;
+        width: 720px;
+        background: #0a0612;
+        border: 5px solid #c44226;
+        border-radius: 24px;
+        padding: 36px 40px 36px;
+        display: flex; flex-direction: column; gap: 22px;
+        /* 주황 테두리 바깥쪽 흰 아웃라인 + 그림자 */
+        box-shadow:
+          0 0 0 5px #ffffff,
+          0 10px 0 rgba(0,0,0,0.5);
+      }
+      /* 그레인 노이즈 오버레이 — 박스 전체에 깔아 빈티지 인쇄 느낌. */
+      .login-box::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.65;
+        z-index: 2;
+      }
+      /* 박스 내부 요소들이 그레인 위로 안 가도록 — pointer-events 로 클릭만 통과시키고 시각상 그레인이 덮음. */
+      .login-box > * { position: relative; z-index: 1; }
+      .login-field {
+        display: flex; align-items: center; gap: 24px;
+      }
+      .login-field label {
+        position: relative;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        color: #ff4d8a;            /* Watchmen 풍 핑크 */
+        min-width: 150px;
+        text-align: left;
+        padding-bottom: 10px;
+      }
+      /* 라벨 앞 크림 별표 ✦ */
+      .login-field label .star {
+        color: #f5e3c8;
+        font-size: 28px;
+        margin-right: 12px;
+        vertical-align: middle;
+        font-style: normal;
+        display: inline-block;
+        transform: translateY(-2px);
+      }
+      /* 라벨 아래 크림 라인 */
+      .login-field label::after {
+        content: '';
+        position: absolute;
+        left: 0; bottom: -2px;
+        width: 104px; height: 5px;
+        background: #f5e3c8;
+        border-radius: 3px;
+      }
+      /* 라인 끝의 작은 점 */
+      .login-field label::before {
+        content: '';
+        position: absolute;
+        left: 114px; bottom: 0px;
+        width: 8px; height: 8px;
+        background: #f5e3c8;
+        border-radius: 50%;
+      }
+      .login-field input {
+        flex: 1;
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 36px;
+        padding: 12px 26px;
+        border: 3px solid #d6c4a3;
+        border-radius: 24px;
+        background: #f5e3c8;       /* 크림 */
+        color: #c44226;            /* 주황 글씨 */
+        outline: none;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+      }
+      .login-field input:focus { border-color: #c44226; }
+      .login-field input::placeholder { color: rgba(196,66,38,0.45); }
+      .login-buttons {
+        display: flex; gap: 24px; margin-top: 12px;
+      }
+      .login-btn {
+        flex: 1;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        padding: 18px 0;
+        border-radius: 14px;
+        cursor: pointer;
+        color: #f5e3c8;
+        background: #0a0612;
+        border: 3.7px solid #f5e3c8;
+        text-shadow: none;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.4);
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s;
+        letter-spacing: 6px;
+      }
+      .login-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+      /* 버튼 앞 별표 — 버튼 글씨 색을 그대로 상속받음. */
+      .login-btn .btn-star {
+        font-style: normal;
+        font-size: 29px;
+        margin-right: 10px;
+        vertical-align: middle;
+        transform: translateY(-2px);
+        display: inline-block;
+        letter-spacing: 0;
+      }
+      /* 이어하기 — 주황 아웃라인 + 주황 글씨. */
+      .login-btn.continue { border-color: #c44226; color: #c44226; }
+      /* 새 게임 — 크림 아웃라인 + 크림 글씨. */
+      .login-btn.newgame  { border-color: #f5e3c8; color: #f5e3c8; }
+      .login-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+      /* 토스트 — 로그인 박스 위에 떠있는 검정 라운드 박스. 메시지 없으면 숨김. */
+      .login-toast {
+        margin-bottom: 18px;
+        display: flex; flex-direction: column; gap: 8px;
+        align-items: center;
+        pointer-events: none;
+      }
+      .login-error, .login-status {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 28px;
+        text-align: center;
+        background: #0a0612;
+        border: 3px solid #c44226;
+        border-radius: 20px;
+        padding: 14px 28px;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.45);
+        letter-spacing: 1px;
+      }
+      .login-error { color: #c44226; }
+      .login-status { color: #f5e3c8; }
+      .login-error:empty, .login-status:empty { display: none; }
+
+      /* 경고 모달 (새게임 확인) */
+      .confirm-overlay {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.75);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 110;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.25s;
+      }
+      .confirm-overlay.show { opacity: 1; pointer-events: auto; }
+      .confirm-box {
+        width: 620px;
+        background: #fff;
+        border: 6px solid #222;
+        border-radius: 32px;
+        padding: 50px;
+        text-align: center;
+      }
+      .confirm-box h2 {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 52px; color: #ff4444;
+        margin: 0 0 24px 0;
+      }
+      .confirm-box p {
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 38px; color: #333;
+        margin: 0 0 36px 0; line-height: 1.4;
+      }
+      .confirm-buttons { display: flex; gap: 24px; }
+      .confirm-buttons .login-btn { font-size: 42px; padding: 20px 0; }
+
+      /* === Village Screen — 마을. 로드↔뉴 사이 허브. === */
+      #villageScreen {
+        position: absolute; inset: 0;
+        background: #000 url('title-bg.jpg') center center / cover no-repeat;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: flex-end;
+        padding-bottom: 140px;
+        z-index: 50;
+        opacity: 1;
+        transition: opacity 0.55s ease;
+      }
+      /* 디졸브 — display 는 켜둔 채 opacity 만 0 → 로그인↔마을 부드럽게 전환. */
+      #villageScreen.hidden { opacity: 0; pointer-events: none; }
+      /* 마을 박스 — 로그인 박스와 동일한 톤앤매너. */
+      .village-box {
+        position: relative;
+        overflow: hidden;
+        width: 720px;
+        background: #0a0612;
+        border: 5px solid #c44226;
+        border-radius: 24px;
+        padding: 32px 36px;
+        display: flex; flex-direction: column; gap: 14px;
+        box-shadow:
+          0 0 0 5px #ffffff,
+          0 10px 0 rgba(0,0,0,0.5);
+      }
+      /* 그레인 노이즈 — 로그인 박스와 동일. */
+      .village-box::after {
+        content: '';
+        position: absolute; inset: 0; pointer-events: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.65;
+        z-index: 2;
+      }
+      .village-box > * { position: relative; z-index: 1; }
+      /* 마을 버튼 — 큰 사이즈, login-btn 과 동일 변형. */
+      .village-btn {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        padding: 22px 0;
+        border-radius: 16px;
+        cursor: pointer;
+        color: #f5e3c8;
+        background: #0a0612;
+        border: 3.7px solid #f5e3c8;
+        text-shadow: none;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.45);
+        transition: transform 0.08s, box-shadow 0.08s;
+        letter-spacing: 8px;
+        text-align: center;
+        position: relative;
+      }
+      .village-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.45); }
+      .village-btn .btn-star {
+        font-style: normal; font-size: 29px;
+        margin-right: 14px;
+        display: inline-block;
+        transform: translateY(-2px);
+        letter-spacing: 0;
+      }
+      /* 캐러가기 — 주황(메인 액션). */
+      .village-btn.mine    { border-color: #c44226; color: #c44226; }
+      /* 스킬트리 — 핑크. */
+      .village-btn.skills  { border-color: #ff4d8a; color: #ff4d8a; }
+      /* 대장간 — 크림(비활성/미구현 톤). */
+      .village-btn.forge   { border-color: #f5e3c8; color: #f5e3c8; opacity: 0.85; }
     </style>
-    <script type="module" crossorigin src="./assets/index-Cph5ncdf.js"></script>
+    <script type="module" crossorigin src="./assets/index-BSK4qo2R.js"></script>
   </head>
   <body>
     <div id="app">
       <div id="stage">
+        <!-- Login Screen — 배경 이미지에 타이틀/행성/캐릭터 포함됨. -->
+        <div id="loginScreen">
+          <!-- 에러/상태 토스트 — 로그인 박스 위에 검정 라운드 박스로 떠있음. -->
+          <div class="login-toast" id="loginToastWrap">
+            <div class="login-error" id="loginError"></div>
+            <div class="login-status" id="loginStatus"></div>
+          </div>
+          <div class="login-box">
+            <div class="login-field">
+              <label>NAME</label>
+              <input type="text" id="loginNickname" autocomplete="username" maxlength="20" placeholder="닉네임 입력" />
+            </div>
+            <div class="login-field">
+              <label>CODE</label>
+              <input type="text" id="loginPassword" autocomplete="off" maxlength="30" placeholder="코드 입력" />
+            </div>
+            <div class="login-buttons">
+              <button class="login-btn continue" id="btnContinue"><i class="btn-star">✦</i>LOAD</button>
+              <button class="login-btn newgame" id="btnNewGame"><i class="btn-star">✦</i>NEW</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Village Screen (마을) — 로그인 후 허브. 캐러가기/스킬트리/대장간. -->
+        <div id="villageScreen" class="hidden">
+          <div class="village-box">
+            <button class="village-btn mine"   id="btnGoMine"><i class="btn-star">✦</i>캐러가기</button>
+            <button class="village-btn skills" id="btnGoSkills"><i class="btn-star">✦</i>스킬트리</button>
+            <button class="village-btn forge"  id="btnGoForge"><i class="btn-star">✦</i>대장간</button>
+          </div>
+        </div>
+
+        <!-- 새게임 확인 모달 -->
+        <div class="confirm-overlay" id="confirmOverlay">
+          <div class="confirm-box">
+            <h2>⚠ 경고</h2>
+            <p>이미 저장된 데이터가 있습니다.<br>새 게임을 시작하면 기존 데이터가<br>모두 삭제됩니다.</p>
+            <div class="confirm-buttons">
+              <button class="login-btn continue" id="confirmCancel">CANCEL</button>
+              <button class="login-btn newgame" id="confirmOk">START NEW</button>
+            </div>
+          </div>
+        </div>
+
         <canvas id="gl"></canvas>
         <div id="ui">
           <!-- HUD -->
@@ -245,7 +544,7 @@
               <h1 id="resultTitle">결과</h1>
               <div class="row"><span id="resultOreLabel">광석</span><span class="lv" id="resultOreNum">0</span></div>
               <div class="row"><span id="resultCoinLabel">코인</span><span class="lv" id="resultCoinNum">0</span></div>
-              <button class="btn" id="toShelterBtn">쉼터로</button>
+              <button class="btn" id="toShelterBtn">마을로</button>
             </div>
           </div>
 
@@ -255,13 +554,13 @@
               <h1 id="shelterTitle">쉼터</h1>
               <div class="coins" id="shelterCoins">0 코인</div>
               <div class="upgrade-list" id="upgradeList"></div>
-              <button class="btn cyan" id="toMineBtn">광산으로</button>
+              <button class="btn cyan" id="toMineBtn">닫기</button>
             </div>
           </div>
 
           <div id="fade"></div>
         </div>
-        <div id="loading">로딩 중…</div>
+        <div id="loading" style="display:none">로딩 중…</div>
       </div>
     </div>
   </body>
