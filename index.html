@@ -1,0 +1,2511 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
+    <meta name="theme-color" content="#1a1410" />
+    <title>내 곡괭이 어떡하냐 진짜</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Black+Han+Sans&family=VT323&display=swap" rel="stylesheet" />
+    <style>
+      html, body {
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
+        overflow: hidden;
+        background: #1a1410;
+        color: #f5e9d6;
+        font-family: 'Patrick Hand', 'Black Han Sans', system-ui, sans-serif;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+      }
+      #app {
+        position: fixed; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, #2a1f18 0%, #0e0a07 100%);
+      }
+      /* 1080x1920 가상 스테이지 — 실제 화면 비율에 맞춰 transform: scale */
+      #stage {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        transform-origin: center center;
+        overflow: hidden;
+        background: #0a0805;
+      }
+      #gl {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      #ui {
+        position: absolute; inset: 0;
+        pointer-events: none; /* 자식들이 개별로 활성 */
+      }
+      /* 각 자식이 자체 CSS 로 pointer-events 를 명시. 무차별 auto 규칙 제거.
+         - 패널: .show 일 때만 auto (아래 .panel-bg.show)
+         - 조이스틱 base/knob: 항상 none
+         - #fade, HUD: 항상 none */
+      #ui .passthrough { pointer-events: none; }
+
+      /* === HUD === */
+      .hud-top {
+        position: absolute;
+        top: 80px;
+        left: 40px;
+        right: 40px;
+        display: flex; justify-content: space-between; align-items: center;
+        pointer-events: none;
+      }
+      .timer {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 110px;
+        color: #f5e9d6;
+        text-shadow: 6px 6px 0 #1a1006, 0 0 20px rgba(255,107,61,0.35);
+        line-height: 1;
+        letter-spacing: 2px;
+      }
+      .timer.warn { color: #c44226; animation: pulse 0.4s infinite alternate; }
+      @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+      /* 광산 좌상단 — 일시정지 버튼 (timer 옆). */
+      .hud-pause {
+        width: 78px; height: 78px;
+        border: 3px solid #f5e3c8;
+        background: rgba(10,6,18,0.7);
+        border-radius: 14px;
+        cursor: pointer; pointer-events: auto;
+        display: flex; align-items: center; justify-content: center;
+        margin-right: 18px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+      }
+      .hud-pause svg { width: 36px; height: 36px; }
+      .hud-pause:active { transform: translateY(2px); }
+
+      /* 일시정지 오버레이. */
+      .pause-overlay {
+        position: absolute; inset: 0;
+        background: rgba(10,6,18,0.85);
+        backdrop-filter: blur(4px);
+        z-index: 500;
+        display: none;
+        align-items: center; justify-content: center;
+        pointer-events: none; /* 숨김 상태에선 통과 */
+      }
+      .pause-overlay.show { display: flex; pointer-events: auto !important; }
+      .pause-overlay.show * { pointer-events: auto; }
+      .pause-box {
+        width: 560px;
+        background: #0a0612;
+        border: 4px solid #c44226;
+        box-shadow: 0 0 0 4px #f5e3c8, 0 10px 0 rgba(0,0,0,0.55);
+        border-radius: 18px;
+        padding: 40px 36px;
+        display: flex; flex-direction: column; gap: 18px;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .pause-title {
+        font-size: 48px; color: #f5e3c8;
+        letter-spacing: 6px; text-align: center;
+        margin-bottom: 12px;
+      }
+      .pause-btn {
+        height: 72px;
+        border-radius: 14px;
+        background: #0a0612;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 32px;
+        letter-spacing: 6px;
+        cursor: pointer;
+        pointer-events: auto;
+        touch-action: manipulation;
+      }
+      .pause-btn.resume { border: 4px solid #9ed9ec; color: #9ed9ec; }
+      .pause-btn.quit   { border: 4px solid #c44226; color: #c44226; }
+      .pause-btn:active { transform: translateY(2px); }
+
+      /* HUD 자원 카운트 — 결과 패널과 동일한 청크 아이콘. */
+      .hud-chunks {
+        background: rgba(10,6,18,0.7);
+        border: 3px solid #f5e3c8;
+        border-radius: 16px;
+        padding: 16px 24px;
+        display: flex; flex-direction: column; gap: 12px;
+        min-width: 160px;
+      }
+      .hud-chunk-row {
+        display: flex; align-items: center; gap: 14px;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .hud-chunk-icon { width: 52px; height: 52px; display: block; }
+      .hud-chunk-row b {
+        font-size: 48px; color: #f5e3c8;
+        text-shadow: 3px 3px 0 #0a0612;
+        line-height: 1;
+        min-width: 60px; text-align: right;
+      }
+
+      /* === Joystick === */
+      .joystick-base, .joystick-knob {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        transition: opacity 0.12s;
+      }
+      .joystick-base {
+        width: 180px; height: 180px;
+        border: 8px solid rgba(245,233,214,0.55);
+        background: rgba(26,16,6,0.25);
+        box-shadow: 0 0 0 4px rgba(0,0,0,0.3) inset;
+      }
+      .joystick-knob {
+        width: 80px; height: 80px;
+        background: rgba(255,107,61,0.85);
+        border: 6px solid #1a1006;
+        box-shadow: 0 8px 0 rgba(0,0,0,0.4);
+      }
+
+      /* === Panels (Result / Shelter) === */
+      .panel-bg {
+        position: absolute; inset: 0;
+        background: rgba(10,7,4,0.7);
+        backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0;
+        pointer-events: none !important;
+        transition: opacity 0.25s;
+        z-index: 200;     /* villageScreen(50)/loginScreen(100) 위로 */
+      }
+      .panel-bg.show { opacity: 1; pointer-events: auto !important; }
+
+      .panel {
+        width: 880px;
+        background: #0a0612;
+        border: 4px solid #c44226;
+        border-radius: 24px;
+        padding: 50px 44px 44px;
+        box-shadow: 0 0 0 5px #ffffff, 0 10px 0 rgba(0,0,0,0.5);
+      }
+      .panel h1 {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 96px; margin: 0 0 30px 0;
+        text-align: center; color: #f5e3c8;
+        letter-spacing: 6px;
+      }
+      .panel .row {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #14081a;
+        border: 3px solid #f5e3c8;
+        border-radius: 14px;
+        padding: 22px 30px;
+        margin: 14px 0;
+        font-size: 48px;
+        color: #f5e3c8;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .panel .row .lv { color: #9ed9ec; font-family: 'Black Han Sans', sans-serif; }
+      /* 결과 row — 원석 → 화살표 → 주괴 */
+      .panel .row.result-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 12px;
+      }
+      .result-side {
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 14px;
+        font-family: 'Black Han Sans', sans-serif;
+        color: #f5e3c8;
+        font-size: 44px;
+        letter-spacing: 1px;
+      }
+      .result-side b { color: #9ed9ec; }
+      .result-chunk-icon { width: 52px; height: 48px; display: block; }
+      .result-ingot-icon { width: 60px; height: 50px; display: block; }
+      .result-arrow {
+        font-size: 48px;
+        color: #c44226;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .result-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 30px; }
+      .result-buttons .btn.small-result { margin-top: 0; font-size: 44px; padding: 22px 0; letter-spacing: 6px; }
+      .result-buttons .btn.small-result {
+        background: linear-gradient(180deg, rgba(255,107,61,0.13), rgba(255,107,61,0.05) 54%, #0a0612);
+        box-shadow: 0 0 9px rgba(255,107,61,0.28), inset 0 0 14px rgba(255,107,61,0.06);
+        text-shadow: 0 0 4px currentColor;
+      }
+      .result-buttons .btn.small-result.cyan {
+        background: linear-gradient(180deg, rgba(158,217,236,0.12), rgba(158,217,236,0.04) 54%, #0a0612);
+        box-shadow: 0 0 9px rgba(158,217,236,0.30), inset 0 0 14px rgba(158,217,236,0.06);
+      }
+      .damage-stats {
+        margin-top: 26px;
+        padding: 18px 20px;
+        border: 3px solid rgba(245,227,200,0.75);
+        border-radius: 12px;
+        background: rgba(10,6,18,0.45);
+      }
+      .damage-title {
+        text-align: center;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        color: #f5e3c8;
+        letter-spacing: 4px;
+        margin-bottom: 12px;
+      }
+      .damage-row {
+        display: grid;
+        grid-template-columns: 54px 1fr;
+        align-items: center;
+        gap: 16px;
+        min-height: 54px;
+      }
+      .damage-icon svg { width: 48px; height: 48px; display: block; }
+      .damage-value {
+        justify-self: end;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 34px;
+        color: #f5e3c8;
+      }
+      .damage-value.crit { color: #ff8a4a; }
+      .damage-value.lightning { color: #6fb0ff; }
+      .btn {
+        display: block; width: 100%;
+        background: #0a0612;
+        border: 4px solid #c44226;
+        border-radius: 14px;
+        padding: 26px 0;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 58px;
+        color: #c44226;
+        letter-spacing: 8px;
+        margin-top: 30px;
+        cursor: pointer;
+      }
+      .btn:active { transform: translateY(3px); }
+      .btn.cyan { border-color: #9ed9ec; color: #9ed9ec; }
+      .btn.small { font-size: 38px; padding: 18px 30px; letter-spacing: 4px; }
+
+      .upgrade-list { display: grid; gap: 18px; }
+      .upgrade {
+        display: flex; align-items: center; justify-content: space-between;
+        background: rgba(0,0,0,0.25);
+        border: 4px solid #1a1006;
+        border-radius: 24px;
+        padding: 22px 28px;
+      }
+      .upgrade .label { font-size: 46px; color: #f5e9d6; }
+      .upgrade .lvbar { display: flex; gap: 8px; margin-top: 8px; }
+      .upgrade .pip {
+        width: 30px; height: 30px; border-radius: 8px;
+        background: rgba(255,255,255,0.15);
+        border: 3px solid #1a1006;
+      }
+      .upgrade .pip.on { background: #c44226; }
+      .upgrade button {
+        background: #4ad7d1; border: 5px solid #1a1006; border-radius: 20px;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 40px; color: #1a1006;
+        padding: 14px 28px; min-width: 200px;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.4);
+      }
+      .upgrade button:disabled { background: #555; color: #aaa; }
+      .coins {
+        text-align: center; font-family: 'Black Han Sans', sans-serif;
+        font-size: 70px; color: #f3c14a;
+        text-shadow: 5px 5px 0 #1a1006;
+        margin-bottom: 30px;
+      }
+
+      /* === Fade overlay === */
+      #fade {
+        position: absolute; inset: 0;
+        background: #000;
+        opacity: 0;
+        pointer-events: none !important;
+        transition: opacity 0.28s ease;
+        z-index: 9000;
+      }
+      #fade.on { opacity: 1; }
+
+      /* === Loading === */
+      #loading {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #1a1410; color: #f5e9d6;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 80px;
+      }
+
+      /* === Login Screen === */
+      #loginScreen {
+        position: absolute; inset: 0;
+        /* 배경 이미지(타이틀/행성/캐릭터 포함된 일러스트) — 1080x1920. */
+        background: #000 url('./media/login-bg.jpg') center center / cover no-repeat;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: flex-end;
+        padding-bottom: 170px;
+        z-index: 100;
+        transition: opacity 0.4s;
+      }
+      #loginScreen.hidden { opacity: 0; pointer-events: none; }
+
+      /* 로그인 박스 — Watchmen 풍 톤. 검정 박스 + 주황 아웃라인 + 바깥 흰 아웃라인. */
+      .login-box {
+        position: relative;
+        overflow: hidden;
+        width: 720px;
+        background: #0a0612;
+        border: 5px solid #c44226;
+        border-radius: 24px;
+        padding: 36px 40px 36px;
+        display: flex; flex-direction: column; gap: 22px;
+        /* 주황 테두리 바깥쪽 흰 아웃라인 + 그림자 */
+        box-shadow:
+          0 0 0 5px #ffffff,
+          0 10px 0 rgba(0,0,0,0.5);
+      }
+      /* 그레인 노이즈 오버레이 — 박스 전체에 깔아 빈티지 인쇄 느낌. */
+      .login-box::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.65;
+        z-index: 2;
+      }
+      /* 박스 내부 요소들이 그레인 위로 안 가도록 — pointer-events 로 클릭만 통과시키고 시각상 그레인이 덮음. */
+      .login-box > * { position: relative; z-index: 1; }
+      .login-field {
+        display: flex; align-items: center; gap: 24px;
+      }
+      .login-field label {
+        position: relative;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        color: #ff4d8a;            /* Watchmen 풍 핑크 */
+        min-width: 150px;
+        text-align: left;
+        padding-bottom: 10px;
+      }
+      /* 라벨 앞 크림 별표 ✦ */
+      .login-field label .star {
+        color: #f5e3c8;
+        font-size: 28px;
+        margin-right: 12px;
+        vertical-align: middle;
+        font-style: normal;
+        display: inline-block;
+        transform: translateY(-2px);
+      }
+      /* 라벨 아래 크림 라인 */
+      .login-field label::after {
+        content: '';
+        position: absolute;
+        left: 0; bottom: -2px;
+        width: 104px; height: 5px;
+        background: #f5e3c8;
+        border-radius: 3px;
+      }
+      /* 라인 끝의 작은 점 */
+      .login-field label::before {
+        content: '';
+        position: absolute;
+        left: 114px; bottom: 0px;
+        width: 8px; height: 8px;
+        background: #f5e3c8;
+        border-radius: 50%;
+      }
+      .login-field input {
+        flex: 1;
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 36px;
+        padding: 12px 26px;
+        border: 3px solid #d6c4a3;
+        border-radius: 24px;
+        background: #f5e3c8;       /* 크림 */
+        color: #c44226;            /* 주황 글씨 */
+        outline: none;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+      }
+      .login-field input:focus { border-color: #c44226; }
+      .login-field input::placeholder { color: rgba(196,66,38,0.45); }
+      .login-buttons {
+        display: flex; gap: 24px; margin-top: 12px;
+      }
+      .login-btn {
+        flex: 1;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        padding: 18px 0;
+        border-radius: 14px;
+        cursor: pointer;
+        color: #f5e3c8;
+        background: #0a0612;
+        border: 3.7px solid #f5e3c8;
+        text-shadow: none;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.4);
+        transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s;
+        letter-spacing: 6px;
+      }
+      .login-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+      /* 버튼 앞 별표 — 버튼 글씨 색을 그대로 상속받음. */
+      .login-btn .btn-star {
+        font-style: normal;
+        font-size: 29px;
+        margin-right: 10px;
+        vertical-align: middle;
+        transform: translateY(-2px);
+        display: inline-block;
+        letter-spacing: 0;
+      }
+      /* 이어하기 — 주황 아웃라인 + 주황 글씨. */
+      .login-btn.continue { border-color: #c44226; color: #c44226; }
+      /* 새 게임 — 크림 아웃라인 + 크림 글씨. */
+      .login-btn.newgame  { border-color: #f5e3c8; color: #f5e3c8; }
+      .login-btn.continue,
+      .login-btn.newgame {
+        background: linear-gradient(180deg, rgba(255,107,61,0.13), rgba(255,107,61,0.05) 54%, #0a0612);
+        box-shadow: 0 0 9px rgba(255,107,61,0.28), inset 0 0 14px rgba(255,107,61,0.06);
+        text-shadow: 0 0 4px currentColor;
+      }
+      .login-btn.newgame {
+        background: linear-gradient(180deg, rgba(245,227,200,0.12), rgba(245,227,200,0.04) 54%, #0a0612);
+        box-shadow: 0 0 9px rgba(245,227,200,0.28), inset 0 0 14px rgba(245,227,200,0.06);
+      }
+      .login-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+      /* 토스트 — 로그인 박스 위에 떠있는 검정 라운드 박스. 메시지 없으면 숨김. */
+      .login-toast {
+        margin-bottom: 18px;
+        display: flex; flex-direction: column; gap: 8px;
+        align-items: center;
+        pointer-events: none;
+      }
+      .login-error, .login-status {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 28px;
+        text-align: center;
+        background: #0a0612;
+        border: 3px solid #c44226;
+        border-radius: 20px;
+        padding: 14px 28px;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.45);
+        letter-spacing: 1px;
+      }
+      .login-error { color: #c44226; }
+      .login-status { color: #f5e3c8; }
+      .login-error:empty, .login-status:empty { display: none; }
+
+      /* 경고 모달 (새게임 확인) */
+      .confirm-overlay {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.75);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 110;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.25s;
+      }
+      .confirm-overlay.show { opacity: 1; pointer-events: auto; }
+      .confirm-box {
+        width: 620px;
+        background: #fff;
+        border: 6px solid #222;
+        border-radius: 32px;
+        padding: 50px;
+        text-align: center;
+      }
+      .confirm-box h2 {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 52px; color: #ff4444;
+        margin: 0 0 24px 0;
+      }
+      .confirm-box p {
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 38px; color: #333;
+        margin: 0 0 36px 0; line-height: 1.4;
+      }
+      .confirm-buttons { display: flex; gap: 24px; }
+      .confirm-buttons .login-btn { font-size: 42px; padding: 20px 0; }
+
+      /* === Village Screen — 마을. 로드↔뉴 사이 허브. === */
+      /* === Village Screen — 3D 씬 위에 HTML UI 오버레이. === */
+      #villageScreen {
+        position: absolute; inset: 0;
+        background: transparent;
+        pointer-events: auto;
+        touch-action: none;
+        z-index: 50;
+        opacity: 1;
+        /* 짧게 — 검정 페이드 트랜지션과 충돌 방지. */
+        transition: opacity 0.18s ease;
+      }
+      #villageScreen.hidden { opacity: 0; pointer-events: none; }
+      #villageScreen > * { pointer-events: auto; }
+      /* 숨김 시 모든 자식 요소까지 클릭 비활성 — 광산 화면에서 마을 버튼 위치 클릭되는 버그 방지. */
+      #villageScreen.hidden *, #villageScreen.hidden > * { pointer-events: none !important; }
+
+      /* 상단 — 뒤로 + 자원 바 */
+      .vil-top {
+        position: absolute; top: 30px; left: 30px; right: 30px;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        z-index: 2;
+      }
+      .vil-back {
+        width: 78px; height: 78px;
+        border: 3px solid #9ed9ec;
+        background: rgba(10,6,18,0.7);
+        color: #9ed9ec;
+        font-size: 36px;
+        border-radius: 12px;
+        box-shadow: 0 0 12px rgba(158,217,236,0.35);
+        cursor: pointer;
+      }
+      .vil-resources {
+        width: 500px;
+        border: 3px solid #ff4d8a;
+        background: rgba(10,6,18,0.8);
+        border-radius: 12px;
+        padding: 12px 20px;
+        display: grid;
+        grid-template-columns: 64px 1fr 64px 1fr;
+        grid-auto-rows: 46px;
+        column-gap: 12px;
+        row-gap: 2px;
+        box-shadow: 0 0 12px rgba(255,77,138,0.35);
+      }
+      .vil-res {
+        display: contents;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .vil-res-icon {
+        width: 56px; height: 46px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .vil-res-icon svg { width: 100%; height: 100%; display: block; }
+      .vil-res b {
+        display: flex; align-items: center; justify-content: flex-end;
+        color: #f5e3c8; font-size: 32px;
+        font-family: 'Black Han Sans', sans-serif;
+        letter-spacing: 0.5px;
+      }
+      .vil-res:nth-child(1) .vil-res-icon, .vil-res:nth-child(2) .vil-res-icon,
+      .vil-res:nth-child(3) .vil-res-icon, .vil-res:nth-child(4) .vil-res-icon { grid-column: 1; }
+      .vil-res:nth-child(1) b, .vil-res:nth-child(2) b,
+      .vil-res:nth-child(3) b, .vil-res:nth-child(4) b { grid-column: 2; }
+      .vil-res:nth-child(5) .vil-res-icon, .vil-res:nth-child(6) .vil-res-icon,
+      .vil-res:nth-child(7) .vil-res-icon { grid-column: 3; }
+      .vil-res:nth-child(5) b, .vil-res:nth-child(6) b,
+      .vil-res:nth-child(7) b { grid-column: 4; }
+      .vil-res:nth-child(1) .vil-res-icon, .vil-res:nth-child(1) b,
+      .vil-res:nth-child(5) .vil-res-icon, .vil-res:nth-child(5) b { grid-row: 1; }
+      .vil-res:nth-child(2) .vil-res-icon, .vil-res:nth-child(2) b,
+      .vil-res:nth-child(6) .vil-res-icon, .vil-res:nth-child(6) b { grid-row: 2; }
+      .vil-res:nth-child(3) .vil-res-icon, .vil-res:nth-child(3) b,
+      .vil-res:nth-child(7) .vil-res-icon, .vil-res:nth-child(7) b { grid-row: 3; }
+      .vil-res:nth-child(4) .vil-res-icon, .vil-res:nth-child(4) b { grid-row: 4; }
+
+      /* 좌우 화살표 — 행성 옆 */
+      .vil-arrow {
+        position: absolute;
+        top: 42%; transform: translateY(-50%);
+        width: 80px; height: 80px;
+        border: 3px solid #f5e3c8;
+        background: rgba(10,6,18,0.6);
+        border-radius: 50%;
+        z-index: 2;
+        cursor: pointer;
+        box-shadow: 0 0 12px rgba(245,227,200,0.3);
+        display: flex; align-items: center; justify-content: center;
+        padding: 0;
+      }
+      .vil-arrow svg { width: 36px; height: 36px; display: block; }
+      .vil-arrow.left  { left: 18px; }
+      .vil-arrow.right { right: 18px; }
+      .vil-arrow:active { transform: translateY(-50%) scale(0.92); }
+
+      /* 하단 버튼들 — 사이버펑크/레트로 톤. */
+      .vil-bottom {
+        position: absolute; left: 24px; right: 24px; bottom: 50px;
+        display: flex; flex-direction: column; gap: 18px;
+        z-index: 2;
+      }
+
+      /* === 마을 버튼 — 부드러운 라운드 사각형. 외곽 = border 색, ::before = 인너 어두운 패널. === */
+      .vil-main-btn, .vil-sub-btn {
+        position: relative;
+        font-family: 'Black Han Sans', sans-serif;
+        cursor: pointer;
+        border: 0;
+        padding: 0;
+        border-radius: 18px;
+      }
+      .vil-main-btn::before, .vil-sub-btn::before {
+        content: '';
+        position: absolute;
+        inset: 3px;
+        background: linear-gradient(180deg, #2a1430 0%, #14081a 100%);
+        border-radius: 15px;
+        pointer-events: none;
+      }
+      .vil-main-btn > *, .vil-sub-btn > * {
+        position: relative;
+        z-index: 1;
+      }
+      /* 메인 버튼은 translateX(-50%) 로 중앙정렬 중 — active 시에도 -50% 유지. */
+      .vil-main-btn:active { transform: translate(-50%, 2px); }
+      .vil-sub-btn:active { transform: translateY(2px); }
+
+      /* === 시작 (메인) — 행성 바로 밑 중앙. 시안 외곽 + 시안 텍스트 글로우. === */
+      .vil-main-btn {
+        position: absolute;
+        left: 50%; bottom: 580px;
+        transform: translateX(-50%);
+        width: 360px;
+        height: 110px;
+        background: #9ed9ec;
+        filter: drop-shadow(0 0 18px rgba(158,217,236,0.55));
+        display: flex; align-items: center; justify-content: center; gap: 22px;
+        z-index: 2;
+      }
+      .vil-main-btn .lbl {
+        font-size: 50px;
+        letter-spacing: 14px;
+        margin-left: 14px;
+        background: linear-gradient(180deg, #ffffff 0%, #d9f4fa 45%, #6dc4d8 100%);
+        -webkit-background-clip: text;
+                background-clip: text;
+        -webkit-text-fill-color: transparent;
+                color: transparent;
+        filter: drop-shadow(0 0 6px rgba(158,217,236,0.9)) drop-shadow(0 0 18px rgba(158,217,236,0.55));
+      }
+      .vil-main-btn .btn-star {
+        color: #9ed9ec;
+        font-size: 26px;
+        font-style: normal;
+        letter-spacing: 0;
+        text-shadow: 0 0 10px rgba(158,217,236,0.9);
+      }
+      .vil-main-btn.locked {
+        background: #5a3a4a;
+        filter: none;
+        cursor: default;
+      }
+      .vil-main-btn.locked .lbl {
+        background: none;
+        -webkit-text-fill-color: #8a7180;
+                color: #8a7180;
+        filter: none;
+        letter-spacing: 8px;
+        margin-left: 8px;
+      }
+      .vil-main-btn.locked .btn-star {
+        color: #6a4a5a;
+        text-shadow: none;
+      }
+      .vil-main-btn.locked:active { transform: translateX(-50%); }
+
+      /* === 서브 버튼 — 핑크 외곽 + 핑크 텍스트 글로우 + SVG 아이콘 === */
+      .vil-sub-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      .vil-sub-btn {
+        height: 92px;
+        background: #ff4d8a;            /* 외곽 = 핑크 */
+        filter: drop-shadow(0 0 12px rgba(255,77,138,0.45));
+        display: flex; align-items: center; justify-content: center; gap: 14px;
+      }
+      .vil-sub-btn .lbl {
+        font-size: 32px;
+        letter-spacing: 4px;
+        /* 그라데이션 텍스트 — 위는 밝은 화이트, 아래는 핑크. */
+        background: linear-gradient(180deg, #ffffff 0%, #ffd0e0 45%, #ff6fa0 100%);
+        -webkit-background-clip: text;
+                background-clip: text;
+        -webkit-text-fill-color: transparent;
+                color: transparent;
+        filter: drop-shadow(0 0 6px rgba(255,77,138,0.9)) drop-shadow(0 0 16px rgba(255,77,138,0.5));
+      }
+      .vil-sub-btn .vil-icon {
+        display: inline-flex;
+        width: 42px; height: 42px;
+        align-items: center; justify-content: center;
+        filter: drop-shadow(0 0 6px rgba(255,77,138,0.7));
+      }
+      .vil-sub-btn .vil-icon svg { width: 100%; height: 100%; }
+
+      /* 로그인 화면 하단 스튜디오 크레딧. */
+      .login-studio {
+        position: absolute;
+        bottom: 14px; left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Patrick Hand', system-ui, sans-serif;
+        font-weight: 300;
+        font-size: 24px;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+        pointer-events: none;
+      }
+      /* [LEGACY] 마을 박스 스타일 — 새 레이아웃 적용 후 미사용. */
+      .village-box-legacy-unused {
+        position: relative;
+        overflow: hidden;
+        width: 720px;
+        background: #0a0612;
+        border: 5px solid #c44226;
+        border-radius: 24px;
+        padding: 32px 36px;
+        display: flex; flex-direction: column; gap: 14px;
+        box-shadow:
+          0 0 0 5px #ffffff,
+          0 10px 0 rgba(0,0,0,0.5);
+      }
+      /* 그레인 노이즈 — 로그인 박스와 동일. */
+      .village-box::after {
+        content: '';
+        position: absolute; inset: 0; pointer-events: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.65;
+        z-index: 2;
+      }
+      .village-box > * { position: relative; z-index: 1; }
+      /* 마을 버튼 — 큰 사이즈, login-btn 과 동일 변형. */
+      .village-btn {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        padding: 22px 0;
+        border-radius: 16px;
+        cursor: pointer;
+        color: #f5e3c8;
+        background: #0a0612;
+        border: 3.7px solid #f5e3c8;
+        text-shadow: none;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.45);
+        transition: transform 0.08s, box-shadow 0.08s;
+        letter-spacing: 8px;
+        text-align: center;
+        position: relative;
+      }
+      .village-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.45); }
+      .village-btn .btn-star {
+        font-style: normal; font-size: 29px;
+        margin-right: 14px;
+        display: inline-block;
+        transform: translateY(-2px);
+        letter-spacing: 0;
+      }
+      /* === Skill Tree Screen — 검정 + 크림/주황 + 그레인 톤. === */
+      #skillTreeScreen {
+        position: absolute; inset: 0;
+        background: #0a0612;
+        color: #f5e3c8;
+        font-family: 'Black Han Sans', system-ui, sans-serif;
+        display: flex; flex-direction: column;
+        padding: 30px 30px 0;
+        gap: 18px;
+        z-index: 60;
+        overflow: hidden;
+      }
+      #skillTreeScreen.hidden { display: none; }
+      #skillTreeScreen::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.4;
+        z-index: 1;
+      }
+      #skillTreeScreen > * { position: relative; z-index: 2; }
+
+      /* 상단 헤더 — 대장간과 동일 톤. */
+      .st-top { display: flex; gap: 16px; align-items: stretch; }
+      .st-back {
+        width: 78px; height: 78px;
+        border: 3px solid #f5e3c8;
+        background: #0a0612;
+        color: #f5e3c8;
+        font-size: 36px;
+        border-radius: 12px;
+        cursor: pointer;
+      }
+      .st-title-wrap {
+        border: 3px solid #c44226;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 0 22px;
+        display: flex; align-items: center;
+      }
+      .st-title-main { font-size: 32px; color: #f5e3c8; letter-spacing: 4px; line-height: 1; }
+      /* 자원 박스 — 키워서 시선 끌기. */
+      .st-resource-box {
+        flex: 1;
+        border: 3px solid #f5e3c8;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 8px 18px;
+        display: flex; align-items: center; justify-content: center; gap: 16px;
+      }
+      .st-resource-icon { width: 50px; height: 44px; display: block; }
+      .st-resource-box b {
+        font-size: 36px; color: #f5e3c8;
+        letter-spacing: 1px;
+        line-height: 1;
+      }
+
+      /* 트리 스크롤 영역 */
+      .st-scroll {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border: 3px solid #c44226;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 30px 0;
+        scrollbar-width: thin;
+        scrollbar-color: #c44226 #0a0612;
+      }
+      .st-scroll::-webkit-scrollbar { width: 6px; }
+      .st-scroll::-webkit-scrollbar-thumb { background: #c44226; border-radius: 3px; }
+
+      .st-tree {
+        display: flex; flex-direction: column;
+        align-items: stretch;
+        padding-bottom: 40px;
+      }
+
+      /* 티어 사이 세로 연결선 — 다음 티어 unlock 됐을 때만 표시. */
+      .st-vconn {
+        width: 4px; height: 36px;
+        margin: 0 auto;
+        background: transparent;
+      }
+      .st-vconn.shown { background: #f5e3c8; opacity: 0.65; }
+
+      /* 한 티어 row — 5칸 그리드. 가로 라인은 페어별 절대 위치. */
+      .st-row {
+        position: relative;
+        min-height: 110px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .st-grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        align-items: center;
+        justify-items: center;
+      }
+
+      /* 페어별 개별 가로 라인 — 각 라인은 인접한 두 슬롯 사이만 연결. */
+      /* 각 슬롯 중심: 10/30/50/70/90% */
+      .st-hseg {
+        position: absolute;
+        top: 50%; transform: translateY(-50%);
+        height: 4px;
+        background: #f5e3c8;
+        opacity: 0.65;
+        z-index: 0;
+      }
+      .st-hseg.ll-l { left: 10%; width: 20%; }
+      .st-hseg.l-c  { left: 30%; width: 20%; }
+      .st-hseg.c-r  { left: 50%; width: 20%; }
+      .st-hseg.r-rr { left: 70%; width: 20%; }
+
+      /* 노드 셀 */
+      .st-cell {
+        display: flex; align-items: center; justify-content: center;
+        min-height: 110px;
+      }
+      .st-node {
+        position: relative;
+        width: 86px; height: 86px;
+        border: 5px solid #f5e3c8;
+        background: #2a1438;
+        border-radius: 18px;
+        color: #f5e3c8;
+        font-size: 36px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0;
+        z-index: 1;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+      }
+      .st-node-icon { line-height: 1; }
+      /* === 색상 규칙 === */
+      /* affordable — 흰 테두리 (배울 수 있음, 아직 미습득 or 1/3 등 부분 습득) */
+      .st-node.affordable {
+        border-color: #ffffff;
+        background: #2d1438;
+      }
+      .st-node.affordable.learned {
+        box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 0 14px rgba(255,255,255,0.25);
+      }
+      /* broke — 빨간 테두리 (루비 부족) */
+      .st-node.broke {
+        border-color: #c44226;
+        background: #2a1424;
+      }
+      /* maxed — 노란 테두리 (완전 완료) */
+      .st-node.maxed {
+        border-color: #ffd84a;
+        background: #322038;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 0 18px rgba(255,216,74,0.55);
+      }
+      /* selected outline */
+      .st-node.selected {
+        outline: 3px solid #9ed9ec;
+        outline-offset: 3px;
+      }
+
+      /* 업그레이드 단계 점 */
+      .st-node-pips {
+        position: absolute;
+        left: 50%; bottom: -34px;
+        transform: translateX(-50%);
+        display: flex; gap: 4px;
+      }
+      .st-node-pips i {
+        width: 12px; height: 12px;
+        background: #2a1a2c;
+        border: 2px solid #f5e3c8;
+        border-radius: 3px;
+        display: block;
+      }
+      .st-node-pips i.on {
+        background: #ffd84a;
+        border-color: #ffd84a;
+      }
+
+      /* === 하단 상세 박스 — 모바일 친화 큰 사이즈. === */
+      .st-detail {
+        display: grid;
+        grid-template-columns: 150px 1fr auto;
+        gap: 22px;
+        align-items: center;
+        border: 4px solid #c44226;
+        background: #0a0612;
+        border-radius: 14px;
+        padding: 22px 26px;
+        margin-bottom: 30px;
+      }
+      .st-detail-icon {
+        width: 130px; height: 130px;
+        border: 4px solid #f5e3c8;
+        background: #1a0e2a;
+        border-radius: 14px;
+        font-size: 64px;
+        color: #f5e3c8;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .st-detail-info { min-width: 0; }
+      .st-detail-name {
+        font-size: 32px;
+        color: #f5e3c8;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+        line-height: 1.1;
+      }
+      .st-detail-desc {
+        font-size: 28px;
+        color: #cdb898;
+        font-family: 'Patrick Hand', sans-serif;
+        font-weight: 400;
+        line-height: 1.3;
+        letter-spacing: 0.5px;
+      }
+      .st-detail-desc .st-var {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 1.12em;
+        font-weight: 400;
+      }
+      .st-detail-desc .st-var.chance { color: #ff4d8a; }
+      .st-detail-desc .st-var.damage { color: #6fb0ff; }
+      .st-detail-pips {
+        display: flex; gap: 6px; margin-top: 12px;
+      }
+      .st-detail-pips i {
+        width: 22px; height: 22px;
+        background: #2a1a2c;
+        border: 3px solid #f5e3c8;
+        border-radius: 4px;
+        display: block;
+      }
+      .st-detail-pips i.on {
+        background: #ffd84a;
+        border-color: #ffd84a;
+      }
+      .st-detail-actions {
+        display: flex; flex-direction: column; gap: 12px; align-items: center;
+      }
+      .st-detail-cost-wrap {
+        display: flex; align-items: center; gap: 10px;
+      }
+      .st-detail-cost-icon { width: 50px; height: 44px; display: block; }
+      .st-detail-cost-wrap b {
+        font-size: 36px; color: #f5e3c8;
+        font-family: 'Black Han Sans', sans-serif;
+        letter-spacing: 1px;
+      }
+      .st-detail-btn {
+        height: 70px;
+        padding: 0 32px;
+        border: 4px solid #ff6b3d;
+        background: linear-gradient(180deg, rgba(255,107,61,0.18), rgba(255,77,138,0.08) 55%, #0a0612);
+        color: #ff8a4a;
+        border-radius: 12px;
+        font-size: 28px;
+        font-family: 'Black Han Sans', sans-serif;
+        letter-spacing: 4px;
+        cursor: pointer;
+        box-shadow: 0 0 14px rgba(255,107,61,0.45), inset 0 0 18px rgba(255,77,138,0.12);
+        text-shadow: 0 0 10px rgba(255,138,74,0.75);
+      }
+      .st-detail-btn.done   { border-color: #ffd84a; color: #ffd84a; }
+      .st-detail-btn.locked { border-color: #3a2a38; color: #5a3a4a; opacity: 0.7; cursor: not-allowed; }
+      .st-detail-btn:disabled { cursor: not-allowed; }
+      .st-detail-btn:active { transform: translateY(2px); }
+
+      /* === Blacksmith Screen — 우리 톤(검정 + 크림 + 주황 + 그레인). === */
+      #blacksmithScreen {
+        position: absolute; inset: 0;
+        background: #0a0612;
+        color: #f5e3c8;
+        font-family: 'Black Han Sans', system-ui, sans-serif;
+        display: flex; flex-direction: column;
+        padding: 30px;
+        gap: 22px;
+        z-index: 60;
+        overflow: hidden;
+      }
+      #blacksmithScreen.hidden { display: none; }
+      /* 그레인 — 다른 박스와 동일한 톤. */
+      #blacksmithScreen::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.45;
+        z-index: 1;
+      }
+      #blacksmithScreen > * { position: relative; z-index: 2; }
+
+      /* 상단 헤더 — 모든 자식이 같은 높이(stretch). */
+      .bs-top { display: flex; gap: 16px; align-items: stretch; min-height: 92px; }
+      .bs-back {
+        width: 92px;
+        border: 3px solid #f5e3c8;
+        background: #0a0612;
+        color: #f5e3c8;
+        font-size: 38px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .bs-title-wrap {
+        border: 3px solid #c44226;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 0 24px;
+        display: flex; align-items: center; justify-content: center;
+        min-width: 180px;
+      }
+      .bs-title-main { font-size: 34px; color: #f5e3c8; letter-spacing: 4px; line-height: 1; }
+      /* 자원 가로 나열 박스 — flex:1 로 옆 공간 다 채움. */
+      .bs-resources {
+        flex: 1;
+        border: 3px solid #c44226;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 8px 18px;
+        display: flex; align-items: center; justify-content: space-around; gap: 16px;
+      }
+      .bs-res {
+        display: flex; align-items: center; gap: 8px;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .bs-res svg { width: 40px; height: 40px; display: block; }
+      .bs-res b { font-size: 28px; color: #f5e3c8; letter-spacing: 0.5px; }
+
+      /* 프리뷰 프레임 — 메인 영역. */
+      .bs-frame {
+        flex: 1;
+        border: 3px solid #c44226;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 16px;
+        display: flex; flex-direction: column; gap: 14px;
+        min-height: 0;
+      }
+      .bs-preview {
+        position: relative;
+        width: 100%;
+        max-height: 520px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+        /* GRID — 3행: 이름 / 곡괭이 / 버튼. 모두 가로 가운데. */
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        justify-items: center;   /* 각 셀 안의 콘텐츠 가로 중앙 */
+        align-items: center;
+        padding: 16px 12px 18px;
+        gap: 8px;
+      }
+      /* 프리뷰 격자 패턴 — 미세하게. */
+      .bs-preview::before {
+        content: none;
+      }
+      /* 이름 + 상태 — grid cell 안에 자연 배치. */
+      .bs-name-wrap {
+        text-align: center;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        pointer-events: none;
+      }
+      .bs-weapon-name {
+        font-size: 30px; color: #f5e3c8;
+        letter-spacing: 3px;
+        font-family: 'Black Han Sans', sans-serif;
+        line-height: 1.1;
+      }
+      .bs-badge {
+        font-size: 16px;
+        letter-spacing: 2px;
+        font-family: 'Patrick Hand', sans-serif;
+        font-weight: 400;
+      }
+      .bs-badge.owned  { color: #9ed9ec; }
+      .bs-badge.locked { color: #c44226; }
+      .bs-big {
+        width: 100%; height: 100%;
+        min-height: 0;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .bs-big svg {
+        max-width: 60%;
+        max-height: 100%;
+        filter: drop-shadow(0 6px 0 rgba(0,0,0,0.35));
+      }
+
+      /* 스탯 — 2열 그리드. 행마다 [아이콘][라벨][값]. */
+      .bs-statlist {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        padding: 6px 0;
+      }
+      .bs-statrow {
+        display: grid;
+        grid-template-columns: 32px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        font-family: 'Black Han Sans', sans-serif;
+        /* 행/열 구분 — 얇은 디바이더. */
+        border-bottom: 1px solid rgba(245,227,200,0.10);
+      }
+      /* 왼쪽 열에만 오른쪽 디바이더 (홀수번째 = 좌측). */
+      .bs-statrow:nth-child(odd) { border-right: 1px solid rgba(245,227,200,0.10); }
+      /* 마지막 줄(5,6번째)은 bottom border 제거. */
+      .bs-statrow:nth-last-child(-n+2) { border-bottom: 0; }
+      .bs-staticon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+      .bs-staticon svg { width: 100%; height: 100%; }
+      .bs-statlabel {
+        color: #cdb898; font-size: 26px; letter-spacing: 1px;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .bs-statval {
+        color: #f5e3c8; font-size: 30px; letter-spacing: 0.5px;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .bs-skillrow { position: relative; cursor: pointer; }
+      .bs-skillrow:hover .bs-statval { color: #7dffb2; }
+      .bs-skill-tooltip {
+        position: absolute;
+        left: 50%; bottom: calc(100% + 10px);
+        transform: translateX(-50%);
+        min-width: 280px; max-width: 380px;
+        padding: 14px 18px;
+        background: #0a0612;
+        border: 3px solid #7dffb2;
+        border-radius: 12px;
+        color: #f5e3c8;
+        font-family: 'Patrick Hand', sans-serif;
+        font-weight: 400;
+        font-size: 18px;
+        letter-spacing: 0.5px;
+        line-height: 1.4;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 30;
+        box-shadow: 0 0 16px rgba(125,255,178,0.3), 0 6px 0 rgba(0,0,0,0.4);
+      }
+      .bs-skill-tooltip .name {
+        display: block;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 22px;
+        color: #7dffb2;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+      }
+      .bs-skill-tooltip.show { opacity: 1; }
+      /* 작은 화살표 (아래 방향) */
+      .bs-skill-tooltip::after {
+        content: '';
+        position: absolute;
+        left: 50%; top: 100%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: #7dffb2;
+      }
+      .bs-statbonus {
+        color: #ff4d8a;
+        font-size: 28px;
+        margin-left: 6px;
+        font-family: 'Black Han Sans', sans-serif;
+        font-weight: 700;
+      }
+
+      /* 강화 효과 — 박스 X, 가로줄 zebra. 5줄 항상 표시, 남은 세로 공간 채움. */
+      .bs-enhance-bonus {
+        flex: 1;
+        margin-top: 16px;
+        display: flex; flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .bs-enhance-bonus:empty { display: none; }
+      .bs-bonus-rowgroup {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        padding: 0 16px;
+      }
+      /* 가로줄 zebra — 홀수 줄(1,3,5) vs 짝수 줄(2,4) 배경 분리. */
+      .bs-bonus-rowgroup:nth-child(odd)  { background: rgba(245,227,200,0.04); }
+      .bs-bonus-rowgroup:nth-child(even) { background: rgba(255,77,138,0.05); }
+      .bs-bonus-cell {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 24px;
+        letter-spacing: 1px;
+        padding: 6px 6px;
+        text-align: left;
+      }
+      .bs-bonus-cell.empty     { color: rgba(245,227,200,0.18); }
+      .bs-bonus-cell.normal    { color: #ffffff; }
+      .bs-bonus-cell.rare      { color: #6fb0ff; }
+      .bs-bonus-cell.legendary { color: #ffd84a; text-shadow: 0 0 8px rgba(255,216,74,0.5); }
+
+      /* 장착+강화 버튼 row — 프리뷰 하단 가운데. */
+      .bs-action-row {
+        display: flex; gap: 10px; align-items: center; justify-content: center;
+      }
+      .bs-equip-btn {
+        min-width: 130px;
+        height: 60px;
+        padding: 0 22px;
+        border: 3px solid #ff4d8a;
+        background: rgba(10,6,18,0.92);
+        color: #ff4d8a;
+        border-radius: 14px;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 24px;
+        letter-spacing: 4px;
+        cursor: pointer;
+        box-shadow: 0 0 18px rgba(255,77,138,0.35);
+      }
+      .bs-equip-btn:active { transform: translateY(2px); }
+      /* 장착중 — 채도 낮춤, 비활성 톤. */
+      .bs-equip-btn.equipped {
+        border-color: #5a3a4a;
+        color: #7a5a6a;
+        box-shadow: none;
+        filter: saturate(0.3);
+        cursor: default;
+      }
+      .bs-equip-btn.equipped:active { transform: none; }
+
+      /* 강화 버튼 — grid cell 안에 자연 배치 (justify-items: center 로 가운데). */
+      .bs-main-btn {
+        min-width: 130px;
+        height: 60px; padding: 0 26px;
+        border-radius: 14px;
+        background: rgba(10,6,18,0.92);
+        font-size: 24px;
+        letter-spacing: 4px;
+        cursor: pointer;
+        font-family: 'Black Han Sans', sans-serif;
+        white-space: nowrap;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+      }
+      .bs-main-btn.enhance {
+        border: 3px solid #ff6b3d;
+        background: linear-gradient(180deg, rgba(255,107,61,0.22), rgba(255,77,138,0.10) 58%, rgba(10,6,18,0.96));
+        color: #ffb37a;
+        box-shadow: 0 0 9px rgba(255,107,61,0.34), inset 0 0 12px rgba(255,216,74,0.06);
+      }
+      .bs-main-btn.craft   { border: 3px solid #c44226; color: #c44226; box-shadow: 0 0 18px rgba(196,66,38,0.35); }
+      .bs-main-btn.craft.broke {
+        border-color: #5a3a35;
+        color: #7a4a45;
+        box-shadow: none;
+        filter: saturate(0.4);
+      }
+      .bs-main-btn.craft.broke .cost-num { color: #a89878; }
+      /* 대장간 메인 페이지 토스트 — 재료 부족 안내. */
+      .bs-main-toast {
+        position: absolute;
+        left: 50%; top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 16px 28px;
+        background: #0a0612;
+        border: 3px solid #c44226;
+        border-radius: 12px;
+        color: #c44226;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 26px;
+        letter-spacing: 3px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+        z-index: 200;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.5);
+      }
+      .bs-main-toast.show { opacity: 1; }
+      .bs-main-btn:active  { transform: translateY(2px); }
+      .bs-main-btn svg { width: 26px; height: 30px; flex: none; }
+      .bs-main-btn .cost-num { color: #f5e3c8; font-family: 'Black Han Sans', sans-serif; text-shadow: none; }
+      .bs-glow-label {
+        color: #ffb37a;
+        text-shadow: 0 0 4px rgba(255,179,122,0.75);
+      }
+
+      /* 곡괭이 목록 — 컴팩트하게. */
+      .bs-list {
+        border: 3px solid #c44226;
+        background: #0a0612;
+        border-radius: 12px;
+        padding: 14px;
+        display: flex; flex-direction: column;
+        gap: 10px;
+      }
+      .bs-list-title {
+        font-size: 18px; color: #ff4d8a;
+        letter-spacing: 3px;
+        display: flex; justify-content: space-between;
+      }
+      .bs-list-title .hint { color: #a89878; font-size: 14px; font-family: 'Patrick Hand', sans-serif; font-weight: 400; letter-spacing: 1px; }
+      .bs-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .bs-slot {
+        position: relative;
+        aspect-ratio: 1;
+        border: 2px solid #f5e3c8;
+        background: #14091a;
+        border-radius: 8px;
+        overflow: hidden;
+        display: grid; place-items: center;
+        padding: 0;
+        cursor: pointer;
+      }
+      .bs-slot.selected { border-color: #c44226; box-shadow: inset 0 0 0 2px #c44226; }
+      .bs-slot.lock { background: #0a0612; border-color: #2a1a2c; }
+      .bs-mini { width: 78%; height: 78%; display: flex; align-items: center; justify-content: center; }
+      .bs-mini svg { width: 100%; height: 100%; }
+      .bs-lv {
+        position: absolute; right: 6px; top: 6px;
+        background: #0a0612; border: 2px solid #f5e3c8;
+        color: #f5e3c8; font-size: 20px;
+        padding: 2px 10px;
+        border-radius: 6px;
+        letter-spacing: 0;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .bs-slot.lock .bs-lv { color: #c44226; border-color: #c44226; }
+      /* "제작" 라벨 — 슬롯 내부 표시 안 함. */
+      .bs-need { display: none; }
+
+      /* === 강화 모달 — 진짜 전체 화면 오버레이. === */
+      .bs-enhance-overlay {
+        position: absolute; inset: 0;
+        background: rgba(10,6,18,0.85);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center; justify-content: center;
+        z-index: 400;
+        padding: 30px;
+      }
+      .bs-enhance-overlay.show { display: flex; }
+      .bs-enhance-box {
+        position: relative;
+        width: 100%; max-width: 720px;
+        max-height: calc(100% - 0px);
+        background: #0a0612;
+        border: 3px solid #c44226;
+        box-shadow: 0 0 0 4px #f5e3c8, 0 10px 0 rgba(0,0,0,0.55);
+        border-radius: 14px;
+        padding: 28px 26px;
+        color: #f5e3c8;
+        overflow-y: auto;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .bs-enhance-box::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 14px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+        background-size: 320px 320px;
+        mix-blend-mode: overlay;
+        opacity: 0.45;
+      }
+      .bs-enhance-box > * { position: relative; z-index: 1; }
+      .bs-enhance-close {
+        position: absolute; right: 18px; top: 18px;
+        width: 56px; height: 56px;
+        background: #0a0612;
+        border: 3px solid #f5e3c8;
+        color: #f5e3c8; font-size: 32px;
+        border-radius: 10px;
+        cursor: pointer;
+        z-index: 50;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.5);
+      }
+      .bs-enhance-title {
+        font-size: 30px; text-align: center;
+        color: #f5e3c8;
+        letter-spacing: 4px;
+        margin-bottom: 14px;
+        padding-right: 50px;
+      }
+      .bs-enhance-circle {
+        margin: 10px auto 18px;
+        width: 160px; height: 160px;
+        border-radius: 50%;
+        border: 3px solid #c44226;
+        background: #14091a;
+        box-shadow: 0 0 0 4px #f5e3c8;
+        display: grid; place-items: center;
+      }
+      .bs-enhance-pick { width: 110px; height: 110px; display: flex; align-items: center; justify-content: center; }
+      .bs-enhance-pick svg { width: 100%; height: 100%; }
+      .bs-enhance-info {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        margin-bottom: 16px;
+      }
+      .bs-info-box {
+        border: 2px solid #f5e3c8;
+        background: #0a0612;
+        padding: 10px;
+        text-align: center;
+        border-radius: 8px;
+      }
+      .bs-info-box small { display: block; font-size: 12px; color: #a89878; letter-spacing: 2px; font-family: 'Patrick Hand', sans-serif; font-weight: 400; margin-bottom: 4px; }
+      .bs-info-box b { font-size: 22px; color: #f5e3c8; letter-spacing: 1px; }
+      .bs-info-box b.success { color: #9ed9ec; }
+      .bs-info-box b.danger  { color: #c44226; }
+
+      /* 강화 옵션 10칸 — 2 × 5. */
+      .bs-option-lines {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        margin-bottom: 16px;
+      }
+      .bs-line {
+        min-height: 44px;
+        border: 2px solid #f5e3c8;
+        background: #0a0612;
+        padding: 6px 10px;
+        display: flex; align-items: center; gap: 10px;
+        border-radius: 6px;
+      }
+      .bs-line.empty { opacity: 0.4; border-color: #2a1a2c; }
+      .bs-num {
+        width: 26px; height: 26px;
+        border: 2px solid #f5e3c8;
+        background: #0a0612;
+        display: grid; place-items: center;
+        font-size: 12px; color: #f5e3c8;
+        flex: none;
+        border-radius: 4px;
+      }
+      /* 희귀도별 num + 텍스트 색상. */
+      .bs-line.normal    .bs-num { background: #ffffff; color: #0a0612; border-color: #ffffff; }
+      .bs-line.rare      .bs-num { background: #4a90ff; color: #ffffff; border-color: #4a90ff; }
+      .bs-line.legendary .bs-num { background: #ffd84a; color: #0a0612; border-color: #ffd84a; }
+      .bs-txt {
+        font-size: 14px;
+        font-family: 'Patrick Hand', sans-serif; font-weight: 400;
+        letter-spacing: 1px;
+        color: #f5e3c8;
+      }
+      .bs-line.normal    .bs-txt { color: #ffffff; }
+      .bs-line.rare      .bs-txt { color: #6fb0ff; }
+      .bs-line.legendary .bs-txt { color: #ffd84a; }
+      .bs-enhance-log {
+        margin-bottom: 16px;
+        min-height: 44px;
+        border: 2px solid #f5e3c8;
+        background: #0a0612;
+        color: #f5e3c8;
+        display: flex; align-items: center; justify-content: center;
+        text-align: center;
+        padding: 8px 14px;
+        font-family: 'Patrick Hand', sans-serif; font-weight: 400;
+        font-size: 16px;
+        border-radius: 6px;
+        letter-spacing: 1px;
+      }
+      .bs-enhance-log.success { color: #9ed9ec; border-color: #9ed9ec; }
+      .bs-enhance-log.fail    { color: #c44226; border-color: #c44226; }
+      .bs-enhance-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .bs-enhance-bottom button {
+        height: 56px;
+        border-radius: 10px;
+        background: #0a0612;
+        font-size: 20px;
+        letter-spacing: 4px;
+        font-family: 'Black Han Sans', sans-serif;
+        cursor: pointer;
+      }
+      .bs-enhance-bottom .keep { border: 3px solid #f5e3c8; color: #f5e3c8; }
+      .bs-enhance-bottom .try  { border: 3px solid #c44226; color: #c44226; }
+      .bs-enhance-bottom button:active { transform: translateY(2px); }
+
+      /* === 강화 모달 — 카지노 연출 === */
+      .bs-enhance-overlay {
+        flex-direction: column;
+        gap: 16px;
+      }
+      .bs-enh-resources-top {
+        display: flex; gap: 22px;
+        padding: 12px 22px;
+        border: 3px solid #c44226;
+        background: rgba(10,6,18,0.85);
+        border-radius: 14px;
+        font-family: 'Black Han Sans', sans-serif;
+        max-width: 540px;
+      }
+      .bs-enh-res {
+        display: flex; align-items: center; gap: 8px;
+      }
+      .bs-enh-res svg { width: 36px; height: 36px; display: block; }
+      .bs-enh-res b { font-size: 28px; color: #f5e3c8; letter-spacing: 0.5px; }
+
+      .bs-enhance-box.mini { max-width: 560px; padding: 24px 24px 20px; }
+
+      .bs-enh-levellabel {
+        position: absolute; left: 50%; top: 8px;
+        transform: translateX(-50%);
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 28px;
+        letter-spacing: 4px;
+        color: #f5e3c8;
+        z-index: 4;
+        white-space: nowrap;
+        text-shadow: 0 0 8px rgba(0,0,0,0.85);
+      }
+      .bs-enh-levellabel b { color: #ffd84a; }
+
+      .bs-enh-arena {
+        position: relative;
+        height: 420px;        /* 60px 키워 라벨/결과 안 겹치게 */
+        margin-bottom: 20px;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+        border-radius: 14px;
+        background: radial-gradient(ellipse at center, #1d0d28 0%, #0a0612 70%);
+      }
+      /* 방사형 빛줄기 — 부드러운 SVG 그라데이션. */
+      .bs-enh-rays {
+        position: absolute; left: 50%; top: 50%;
+        width: 800px; height: 800px;
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+        pointer-events: none;
+        /* radial mask 적용해 가장자리 fade. */
+        -webkit-mask-image: radial-gradient(circle, #000 30%, transparent 75%);
+                mask-image: radial-gradient(circle, #000 30%, transparent 75%);
+        filter: blur(2px);
+      }
+      .bs-enh-rays::before {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+          conic-gradient(from 0deg,
+            transparent 0deg,    rgba(255,210,90,0.7) 5deg,  transparent 10deg,
+            transparent 24deg,   rgba(255,210,90,0.5) 30deg, transparent 36deg,
+            transparent 48deg,   rgba(255,210,90,0.6) 54deg, transparent 60deg,
+            transparent 72deg,   rgba(255,210,90,0.5) 78deg, transparent 84deg,
+            transparent 96deg,   rgba(255,210,90,0.7) 102deg, transparent 108deg,
+            transparent 120deg,  rgba(255,210,90,0.5) 126deg, transparent 132deg,
+            transparent 144deg,  rgba(255,210,90,0.6) 150deg, transparent 156deg,
+            transparent 168deg,  rgba(255,210,90,0.5) 174deg, transparent 180deg,
+            transparent 192deg,  rgba(255,210,90,0.7) 198deg, transparent 204deg,
+            transparent 216deg,  rgba(255,210,90,0.5) 222deg, transparent 228deg,
+            transparent 240deg,  rgba(255,210,90,0.6) 246deg, transparent 252deg,
+            transparent 264deg,  rgba(255,210,90,0.5) 270deg, transparent 276deg,
+            transparent 288deg,  rgba(255,210,90,0.7) 294deg, transparent 300deg,
+            transparent 312deg,  rgba(255,210,90,0.5) 318deg, transparent 324deg,
+            transparent 336deg,  rgba(255,210,90,0.6) 342deg, transparent 348deg,
+            transparent 360deg);
+      }
+      /* charging — 빠르게 모이는 빛 */
+      .bs-enh-arena.charging .bs-enh-rays {
+        animation: ray-charge 0.9s ease-out forwards;
+      }
+      /* success — 폭발 후 회전 + 페이드 */
+      .bs-enh-arena.success .bs-enh-rays {
+        animation: ray-burst 1.4s ease-out forwards;
+      }
+      @keyframes ray-charge {
+        0%   { transform: translate(-50%, -50%) scale(0)   rotate(0deg);   opacity: 0; }
+        60%  { transform: translate(-50%, -50%) scale(0.7) rotate(180deg); opacity: 0.6; }
+        100% { transform: translate(-50%, -50%) scale(0.9) rotate(360deg); opacity: 0.85; }
+      }
+      @keyframes ray-burst {
+        0%   { transform: translate(-50%, -50%) scale(0.9)  rotate(0deg);   opacity: 1; }
+        20%  { transform: translate(-50%, -50%) scale(1.25) rotate(60deg);  opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(1.8)  rotate(720deg); opacity: 0; }
+      }
+
+      /* 아우라 — 아이템 주변 둥근 황금 글로우. */
+      .bs-enh-aura {
+        position: absolute; left: 50%; top: 50%;
+        width: 220px; height: 220px;
+        transform: translate(-50%, -50%) scale(0);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,200,80,0.85) 0%, rgba(255,140,40,0.4) 40%, transparent 70%);
+        pointer-events: none;
+        filter: blur(6px);
+        opacity: 0;
+      }
+      .bs-enh-arena.charging .bs-enh-aura { animation: aura-charge 0.9s ease-out forwards; }
+      .bs-enh-arena.success  .bs-enh-aura { animation: aura-burst 1.4s ease-out forwards; }
+      @keyframes aura-charge {
+        0%   { transform: translate(-50%, -50%) scale(2);   opacity: 0; }
+        70%  { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+        100% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+      }
+      @keyframes aura-burst {
+        0%   { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+        30%  { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+      }
+
+      /* 아이템 박스 — 가운데 곡괭이 SVG. */
+      .bs-enh-itembox {
+        position: relative; z-index: 2;
+        width: 160px; height: 160px;
+        border: 3px solid #c44226;
+        background: #1a0e2a;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 0 0 4px #f5e3c8, 0 6px 0 rgba(0,0,0,0.5);
+      }
+      .bs-enh-itemicon { width: 80%; height: 80%; display: flex; align-items: center; justify-content: center; transition: filter 0.6s ease; }
+      .bs-enh-itemicon svg { width: 100%; height: 100%; }
+      /* 제작 차징 중 — 검정 실루엣 톤. burst 시 컬러로 전환. */
+      .bs-enh-itemicon.bs-craft-silhouette { filter: brightness(0); }
+      /* charging: 두근두근 pulse + 살짝 흔들림. */
+      .bs-enh-arena.charging .bs-enh-itembox {
+        animation: item-tremble 0.18s ease-in-out infinite;
+      }
+      @keyframes item-tremble {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        25%      { transform: translate(-2px, 1px) scale(1.02); }
+        50%      { transform: translate(2px, -1px) scale(1.03); }
+        75%      { transform: translate(-1px, -2px) scale(1.02); }
+      }
+      .bs-enh-arena.success .bs-enh-itembox {
+        animation: item-burst 1.4s ease-out forwards;
+      }
+      @keyframes item-burst {
+        0%   { transform: scale(1); }
+        15%  { transform: scale(1.25); box-shadow: 0 0 0 4px #ffd84a, 0 0 60px rgba(255,216,74,0.85); }
+        40%  { transform: scale(1.1); }
+        100% { transform: scale(1.05); box-shadow: 0 0 0 4px #ffd84a, 0 0 40px rgba(255,216,74,0.55); }
+      }
+      .bs-enh-arena.fail .bs-enh-itembox {
+        animation: item-fail 0.6s ease-out forwards;
+      }
+      @keyframes item-fail {
+        0%   { transform: translateX(0); border-color: #c44226; }
+        20%  { transform: translateX(-12px) rotate(-2deg); }
+        40%  { transform: translateX(10px)  rotate(2deg); }
+        60%  { transform: translateX(-8px)  rotate(-1deg); }
+        80%  { transform: translateX(6px)   rotate(1deg); }
+        100% { transform: translateX(0); }
+      }
+
+      /* 결과 텍스트 — "강화 성공!" / "강화 실패..". 레벨라벨 아래 별도 위치. */
+      .bs-enh-result {
+        position: absolute; left: 50%; top: 56px;
+        transform: translateX(-50%) translateY(-12px);
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        letter-spacing: 4px;
+        opacity: 0;
+        z-index: 3;
+        text-align: center;
+        text-shadow: 0 0 12px rgba(0,0,0,0.85);
+      }
+      /* 결과 표시 중엔 레벨 라벨 숨김 — 자리 겹침 방지. */
+      .bs-enh-arena.success .bs-enh-levellabel,
+      .bs-enh-arena.fail    .bs-enh-levellabel { opacity: 0; }
+      .bs-enh-result.success { color: #ffd84a; text-shadow: 0 0 14px rgba(255,216,74,0.9), 0 0 28px rgba(255,140,40,0.7); }
+      .bs-enh-result.fail    { color: #c44226; }
+      .bs-enh-arena.success .bs-enh-result,
+      .bs-enh-arena.fail    .bs-enh-result {
+        animation: result-pop 0.5s ease-out forwards;
+      }
+      @keyframes result-pop {
+        0%   { transform: translateX(-50%) translateY(-22px) scale(0.5); opacity: 0; }
+        50%  { transform: translateX(-50%) translateY(-14px) scale(1.15); opacity: 1; }
+        100% { transform: translateX(-50%) translateY(-12px) scale(1); opacity: 1; }
+      }
+      .bs-enh-levellabel { transition: opacity 0.2s; }
+
+      /* 얻은 능력치 — 결과 발표 후 표시. */
+      .bs-enh-gains {
+        position: absolute; left: 50%; bottom: 18px;
+        transform: translateX(-50%);
+        display: flex; flex-direction: column; gap: 6px;
+        opacity: 0;
+        z-index: 3;
+      }
+      .bs-enh-arena.success .bs-enh-gains,
+      .bs-enh-arena.fail    .bs-enh-gains {
+        animation: gains-show 0.4s ease-out 0.5s forwards;
+      }
+      @keyframes gains-show {
+        0%   { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+      .bs-enh-gain-row {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 26px;
+        letter-spacing: 1px;
+        text-align: center;
+        padding: 8px 22px;
+        background: rgba(10,6,18,0.9);
+        border-radius: 8px;
+        border: 2px solid transparent;
+      }
+      .bs-enh-gain-row.normal    { color: #ffffff;  border-color: rgba(255,255,255,0.4); }
+      .bs-enh-gain-row.rare      { color: #6fb0ff;  border-color: rgba(111,176,255,0.7); text-shadow: 0 0 8px rgba(111,176,255,0.6); }
+      .bs-enh-gain-row.legendary { color: #ffd84a;  border-color: rgba(255,216,74,0.8);  text-shadow: 0 0 8px rgba(255,216,74,0.85); }
+      .bs-enh-gain-row.fail      { color: #c44226;  border-color: rgba(196,66,38,0.6); }
+
+      /* 컨트롤 영역 — 강화 진행 중엔 흐릿. */
+      .bs-enh-controls { transition: opacity 0.2s; }
+      .bs-enh-arena.charging ~ .bs-enh-controls,
+      .bs-enh-arena.success ~ .bs-enh-controls,
+      .bs-enh-arena.fail    ~ .bs-enh-controls {
+        opacity: 0.3;
+        pointer-events: none;
+      }
+      .bs-mini-info {
+        display: flex; flex-direction: column; gap: 12px;
+        padding: 14px 6px;
+        margin-bottom: 18px;
+      }
+      .bs-mini-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 16px;
+        background: #14081a;
+        border: 2px solid #2a1a2c;
+        border-radius: 10px;
+      }
+      .bs-mini-label {
+        font-family: 'Patrick Hand', sans-serif; font-weight: 400;
+        font-size: 22px; color: #cdb898; letter-spacing: 1px;
+      }
+      .bs-mini-row b { font-size: 28px; font-family: 'Black Han Sans', sans-serif; letter-spacing: 1px; }
+      .bs-mini-row b.success { color: #9ed9ec; }
+      .bs-mini-row b.danger  { color: #c44226; }
+      .bs-mini-try {
+        width: 100%;
+        height: 72px;
+        border: 3px solid #ff6b3d;
+        background: linear-gradient(180deg, rgba(255,107,61,0.22), rgba(255,77,138,0.10) 58%, rgba(10,6,18,0.96));
+        color: #ffb37a;
+        border-radius: 12px;
+        font-size: 30px;
+        font-family: 'Black Han Sans', sans-serif;
+        letter-spacing: 4px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 12px;
+        margin-top: 14px;
+        box-shadow: 0 0 10px rgba(255,107,61,0.34), inset 0 0 14px rgba(255,216,74,0.06);
+      }
+      .bs-mini-try svg { width: 30px; height: 36px; flex: none; }
+      .bs-mini-try .cost-num { color: #f5e3c8; text-shadow: none; }
+      .bs-mini-try:active { transform: translateY(2px); }
+      /* 비용 부족 — 채도 낮춤 + 클릭은 가능(안내 표시). */
+      .bs-mini-try.broke {
+        border-color: #5a3a35;
+        color: #7a4a45;
+        box-shadow: none;
+        filter: saturate(0.4);
+      }
+      .bs-mini-try.broke .cost-num { color: #a89878; }
+
+      /* 강화 초기화 버튼 */
+      .bs-mini-reset {
+        width: 100%;
+        height: 52px;
+        margin-top: 10px;
+        border: 2px solid #5a3a4a;
+        background: transparent;
+        color: #a89878;
+        border-radius: 10px;
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 22px;
+        letter-spacing: 3px;
+        cursor: pointer;
+      }
+      .bs-mini-reset:hover { color: #f5e3c8; border-color: #f5e3c8; }
+      .bs-mini-reset:active { transform: translateY(2px); }
+
+      /* 토스트 (부족/오류 안내) */
+      .bs-toast {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-12px);
+        padding: 12px 22px;
+        background: #0a0612;
+        border: 3px solid #c44226;
+        border-radius: 10px;
+        color: #c44226;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 22px;
+        letter-spacing: 2px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 60;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.4);
+      }
+      .bs-toast.show { opacity: 1; }
+
+      /* 강화 초기화 확인 모달 (내부 stacked) */
+      .bs-reset-confirm {
+        position: absolute; inset: 0;
+        background: rgba(10,6,18,0.85);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center; justify-content: center;
+        z-index: 100;
+        border-radius: 14px;
+      }
+      .bs-reset-confirm.show { display: flex; }
+      .bs-reset-box {
+        width: 440px;
+        background: #0a0612;
+        border: 4px solid #c44226;
+        box-shadow: 0 0 0 4px #f5e3c8;
+        border-radius: 14px;
+        padding: 30px 26px;
+        text-align: center;
+        font-family: 'Black Han Sans', sans-serif;
+      }
+      .bs-reset-msg {
+        color: #f5e3c8;
+        font-size: 26px;
+        letter-spacing: 2px;
+        line-height: 1.4;
+        margin-bottom: 24px;
+      }
+      .bs-reset-sub {
+        font-size: 16px;
+        color: #a89878;
+        letter-spacing: 1px;
+        font-family: 'Patrick Hand', sans-serif;
+        font-weight: 400;
+      }
+      .bs-reset-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .bs-reset-actions button {
+        height: 60px;
+        border-radius: 10px;
+        background: #0a0612;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 24px;
+        letter-spacing: 4px;
+        cursor: pointer;
+      }
+      .bs-reset-no  { border: 3px solid #f5e3c8; color: #f5e3c8; }
+      .bs-reset-yes { border: 3px solid #c44226; color: #c44226; }
+      .bs-reset-actions button:active { transform: translateY(2px); }
+
+      /* 캐러가기 — 주황(메인 액션). */
+      .village-btn.mine    { border-color: #c44226; color: #c44226; }
+      /* 스킬트리 — 핑크. */
+      .village-btn.skills  { border-color: #ff4d8a; color: #ff4d8a; }
+      /* 대장간 — 크림(비활성/미구현 톤). */
+      .village-btn.forge   { border-color: #f5e3c8; color: #f5e3c8; opacity: 0.85; }
+    </style>
+    <script type="module" crossorigin src="./assets/index-DCFMw2L8.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage">
+        <!-- Login Screen — 배경 이미지에 타이틀/행성/캐릭터 포함됨. -->
+        <div id="loginScreen">
+          <div class="login-studio">내떡진 게임즈</div>
+          <!-- 에러/상태 토스트 — 로그인 박스 위에 검정 라운드 박스로 떠있음. -->
+          <div class="login-toast" id="loginToastWrap">
+            <div class="login-error" id="loginError"></div>
+            <div class="login-status" id="loginStatus"></div>
+          </div>
+          <div class="login-box">
+            <div class="login-field">
+              <label>NAME</label>
+              <input type="text" id="loginNickname" autocomplete="username" maxlength="20" placeholder="닉네임 입력" />
+            </div>
+            <div class="login-field">
+              <label>CODE</label>
+              <input type="text" id="loginPassword" autocomplete="off" maxlength="30" placeholder="코드 입력" />
+            </div>
+            <div class="login-buttons">
+              <button class="login-btn continue" id="btnContinue"><i class="btn-star">✦</i>LOAD</button>
+              <button class="login-btn newgame" id="btnNewGame"><i class="btn-star">✦</i>NEW</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skill Tree Screen — 세로 스크롤 트리. -->
+        <div id="skillTreeScreen" class="hidden">
+          <!-- 상단 헤더 -->
+          <div class="st-top">
+            <button class="st-back" id="stBack">←</button>
+            <div class="st-title-wrap">
+              <div class="st-title-main">스킬트리</div>
+            </div>
+            <!-- 스킬트리는 광석(돌 주괴) 소모. -->
+            <div class="st-resource-box">
+              <svg viewBox="0 0 64 48" class="st-resource-icon">
+                <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+              </svg>
+              <b id="stStone">0</b>
+            </div>
+          </div>
+
+          <!-- 트리 스크롤 영역 -->
+          <div class="st-scroll" id="stScroll">
+            <div class="st-tree" id="stTree"></div>
+          </div>
+
+          <!-- 하단 상세 박스 -->
+          <div class="st-detail">
+            <div class="st-detail-icon" id="stDetailIcon">?</div>
+            <div class="st-detail-info">
+              <div class="st-detail-name" id="stDetailName">스킬이름</div>
+              <div class="st-detail-desc" id="stDetailDesc">스킬 설명...</div>
+              <div class="st-detail-pips" id="stDetailPips"></div>
+            </div>
+            <div class="st-detail-actions">
+              <div class="st-detail-cost-wrap">
+                <svg viewBox="0 0 64 48" class="st-detail-cost-icon">
+                  <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                  <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                  <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                </svg>
+                <b id="stDetailCost">0</b>
+              </div>
+              <button class="st-detail-btn" id="stDetailBtn">습득하기</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Blacksmith Screen (대장간) — 곡괭이 제작/강화. -->
+        <div id="blacksmithScreen" class="hidden">
+          <!-- 상단 -->
+          <div class="bs-top">
+            <button class="bs-back" id="bsBack">←</button>
+            <div class="bs-title-wrap">
+              <div class="bs-title-main">대장간</div>
+            </div>
+            <!-- 자원 가로 나열 — 돌/루비/사파이어/에메랄드. -->
+            <div class="bs-resources">
+              <div class="bs-res">
+                <svg viewBox="0 0 64 48"><path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                <b id="bsResStone">0</b>
+              </div>
+              <div class="bs-res">
+                <svg viewBox="0 0 56 64"><path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                <b id="bsResRuby">0</b>
+              </div>
+              <div class="bs-res">
+                <svg viewBox="0 0 56 64"><path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#1a3270" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#3a6ecf" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#2b54a0" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#7aaaf5" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                <b id="bsResSapphire">0</b>
+              </div>
+              <div class="bs-res">
+                <svg viewBox="0 0 56 64"><path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#0e4528" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#2a9460" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#1f7048" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#5fd89c" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                <b id="bsResEmerald">0</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- 프리뷰 프레임 — 이름 위 중앙, 곡괭이 중앙, 강화 버튼 하단 중앙. -->
+          <section class="bs-frame">
+            <div class="bs-preview">
+              <div class="bs-name-wrap">
+                <div class="bs-weapon-name" id="bsWeaponName">나무 곡괭이 +0</div>
+                <div class="bs-badge" id="bsBadge">보유중</div>
+              </div>
+              <div class="bs-big" id="bsBigPick"></div>
+              <div class="bs-action-row">
+                <button class="bs-equip-btn" id="bsEquipBtn">장착</button>
+                <button class="bs-main-btn enhance" id="bsMainBtn">강화</button>
+              </div>
+            </div>
+
+            <!-- 기본 스탯 — 2열 × 3행. 1행: 공격력/공격속도, 2행: 치명타확률/치명타데미지, 3행: 경도관통/특수능력. -->
+            <div class="bs-statlist">
+              <div class="bs-statrow">
+                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M12 2 L15 9 L22 10 L17 15 L18 22 L12 18 L6 22 L7 15 L2 10 L9 9 Z" fill="#ff4d8a" stroke="#08040f" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+                <span class="bs-statlabel">공격력</span>
+                <span class="bs-statval" id="bsAtkVal">13</span>
+              </div>
+              <div class="bs-statrow">
+                <span class="bs-staticon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#9ed9ec" stroke-width="2"/><path d="M12 6 V12 L16 14" stroke="#9ed9ec" stroke-width="2" stroke-linecap="round" fill="none"/></svg></span>
+                <span class="bs-statlabel">공격속도</span>
+                <span class="bs-statval" id="bsSpdVal">0.91</span>
+              </div>
+              <div class="bs-statrow">
+                <span class="bs-staticon"><svg viewBox="0 0 24 24"><polygon points="12,2 14,9 22,9 16,14 18,22 12,17 6,22 8,14 2,9 10,9" fill="none" stroke="#ff8a4a" stroke-width="2" stroke-linejoin="round"/></svg></span>
+                <span class="bs-statlabel">치명타확률</span>
+                <span class="bs-statval" id="bsCritRateVal">0%</span>
+              </div>
+              <div class="bs-statrow">
+                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M12 2 L7 12 L11 12 L10 22 L17 10 L13 10 Z" fill="#ff5a5a" stroke="#08040f" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+                <span class="bs-statlabel">치명타데미지</span>
+                <span class="bs-statval" id="bsCritDmgVal">125%</span>
+              </div>
+              <div class="bs-statrow">
+                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M3 12 L21 12" stroke="#ffd84a" stroke-width="2" stroke-linecap="round"/><path d="M15 6 L21 12 L15 18" stroke="#ffd84a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="3" y="6" width="6" height="12" fill="none" stroke="#ffd84a" stroke-width="2"/></svg></span>
+                <span class="bs-statlabel">경도관통</span>
+                <span class="bs-statval" id="bsPenVal">1</span>
+              </div>
+              <div class="bs-statrow bs-skillrow" id="bsSkillRow">
+                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M13 2 L4 14 L11 14 L10 22 L20 9 L13 9 Z" fill="#7dffb2" stroke="#08040f" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+                <span class="bs-statlabel">특수능력</span>
+                <span class="bs-statval" id="bsSkillVal">청크수명+</span>
+                <!-- 클릭 시 위로 뜨는 툴팁. -->
+                <div class="bs-skill-tooltip" id="bsSkillTooltip"></div>
+              </div>
+            </div>
+
+            <!-- 강화 옵션 효과 — 곡괭이가 가진 강화 옵션 표시. -->
+            <div class="bs-enhance-bonus" id="bsEnhanceBonus"></div>
+          </section>
+
+          <!-- 곡괭이 목록 그리드 -->
+          <section class="bs-list">
+            <div class="bs-list-title">
+              <span>곡괭이 목록</span>
+              <span class="hint">잠김 = 제작 필요</span>
+            </div>
+            <div class="bs-grid" id="bsGrid"></div>
+          </section>
+
+        </div>
+
+        <!-- 강화 모달 -->
+        <div class="bs-enhance-overlay" id="bsEnhanceModal">
+          <!-- 박스 위 — 보유 자원. -->
+          <div class="bs-enh-resources-top" id="bsEnhResourcesTop">
+            <div class="bs-enh-res">
+              <svg viewBox="0 0 56 64"><path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/></svg>
+              <b id="bsEnhRubyCount">0</b>
+            </div>
+          </div>
+          <div class="bs-enhance-box mini">
+            <button class="bs-enhance-close" id="bsEnhanceClose">×</button>
+
+            <!-- 중앙 아이템 영역. 위에 +N→+M 레벨 라벨. -->
+            <div class="bs-enh-arena" id="bsEnhArena">
+              <div class="bs-enh-levellabel" id="bsEnhLevelLabel">+0 → +1</div>
+              <div class="bs-enh-rays" id="bsEnhRays"></div>
+              <div class="bs-enh-aura" id="bsEnhAura"></div>
+              <div class="bs-enh-itembox" id="bsEnhItemBox">
+                <div class="bs-enh-itemicon" id="bsEnhItemIcon"></div>
+              </div>
+              <div class="bs-enh-result" id="bsEnhResult"></div>
+              <div class="bs-enh-gains" id="bsEnhGains"></div>
+            </div>
+
+            <!-- 정보 + 버튼 영역. -->
+            <div class="bs-enh-controls" id="bsEnhControls">
+              <div class="bs-mini-info">
+                <div class="bs-mini-row">
+                  <span class="bs-mini-label">강화 확률</span>
+                  <b class="success" id="bsChanceBox">100%</b>
+                </div>
+                <div class="bs-mini-row">
+                  <span class="bs-mini-label">실패 리스크</span>
+                  <b class="danger" id="bsRiskBox">없음</b>
+                </div>
+              </div>
+              <button class="bs-mini-try" id="bsTryEnh">
+                <svg viewBox="0 0 56 64"><path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/></svg>
+                <b class="cost-num" id="bsNeedGem">1</b>
+                <span class="bs-glow-label">강화</span>
+              </button>
+              <button class="bs-mini-reset" id="bsResetBtn">강화 초기화</button>
+              <!-- 부족 안내 토스트 -->
+              <div class="bs-toast" id="bsToast"></div>
+            </div>
+
+            <!-- 초기화 확인 모달 -->
+            <div class="bs-reset-confirm" id="bsResetConfirm">
+              <div class="bs-reset-box">
+                <div class="bs-reset-msg">강화를 초기화하시겠습니까?<br><span class="bs-reset-sub">+0 으로 돌아가며 모든 옵션이 사라집니다.</span></div>
+                <div class="bs-reset-actions">
+                  <button class="bs-reset-no" id="bsResetNo">아니오</button>
+                  <button class="bs-reset-yes" id="bsResetYes">예</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 호환을 위해 hidden ID 유지 -->
+            <div id="bsEnhanceTitle" style="display:none"></div>
+            <div id="bsEnhancePick" style="display:none"></div>
+            <div id="bsLevelBox" style="display:none"></div>
+            <div id="bsOptionLines" style="display:none"></div>
+            <div id="bsEnhanceLog" style="display:none"></div>
+            <button id="bsCancelEnh" style="display:none"></button>
+          </div>
+        </div>
+
+        <!-- Village Screen (마을) — 3D 씬 + HTML UI 오버레이. -->
+        <div id="villageScreen" class="hidden">
+          <!-- 상단: 자원 바 + 뒤로 -->
+          <div class="vil-top">
+            <button class="vil-back" id="btnVilBack">←</button>
+            <div class="vil-resources">
+              <!-- 돌멩이 (stage 1 시작 광석) — 회색 돌. -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 64 48">
+                    <!-- 그림자 바닥 -->
+                    <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 측면 어둠 -->
+                    <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 윗면 밝음 -->
+                    <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 거친 표면 점 -->
+                    <circle cx="22" cy="20" r="1.8" fill="#3a3a3a"/>
+                    <circle cx="36" cy="18" r="1.4" fill="#3a3a3a"/>
+                    <circle cx="44" cy="22" r="1.6" fill="#3a3a3a"/>
+                    <circle cx="20" cy="32" r="1.2" fill="#2a2a2a"/>
+                    <circle cx="40" cy="34" r="1.4" fill="#2a2a2a"/>
+                  </svg>
+                </span>
+                <b id="resStone">0</b>
+              </div>
+              <!-- 구리 ingot -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 64 48">
+                    <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#5a2a18" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#a85a30" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#d97a3d" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M18 14 L46 14 L48 18 L18 18 Z" fill="#ffb070" opacity="0.55"/>
+                  </svg>
+                </span>
+                <b id="resCopper">0</b>
+              </div>
+              <!-- 은 ingot -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 64 48">
+                    <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#6a6f78" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#b6bcc4" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#e3e6ea" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M18 14 L46 14 L48 18 L18 18 Z" fill="#ffffff" opacity="0.65"/>
+                  </svg>
+                </span>
+                <b id="resSilver">0</b>
+              </div>
+              <!-- 금 ingot -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 64 48">
+                    <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#7a5a10" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#d9a52a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#ffd84a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M18 14 L46 14 L48 18 L18 18 Z" fill="#ffffaa" opacity="0.6"/>
+                  </svg>
+                </span>
+                <b id="resGold">0</b>
+              </div>
+              <!-- 루비 gem — 다각 보석. 윗면 하이라이트 + 측면 음영. -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 56 64">
+                    <!-- 본체 아래 뾰족 (하단 어두운 면) -->
+                    <path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 좌측 측면 -->
+                    <path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 우측 측면 (더 어둠) -->
+                    <path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 윗면 facet -->
+                    <path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- 하이라이트 -->
+                    <path d="M14 18 L20 14 L20 28 Z" fill="#ffd0d8" opacity="0.85"/>
+                    <path d="M30 14 L36 14 L34 22 Z" fill="#ffffff" opacity="0.55"/>
+                  </svg>
+                </span>
+                <b id="resRuby">0</b>
+              </div>
+              <!-- 사파이어 gem -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 56 64">
+                    <path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#1a3270" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#3a6ecf" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#2b54a0" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#7aaaf5" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M14 18 L20 14 L20 28 Z" fill="#d0e4ff" opacity="0.85"/>
+                  </svg>
+                </span>
+                <b id="resSapphire">0</b>
+              </div>
+              <!-- 에메랄드 gem -->
+              <div class="vil-res">
+                <span class="vil-res-icon">
+                  <svg viewBox="0 0 56 64">
+                    <path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#0e4528" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#2a9460" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#1f7048" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#5fd89c" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M14 18 L20 14 L20 28 Z" fill="#bff5d8" opacity="0.85"/>
+                  </svg>
+                </span>
+                <b id="resEmerald">0</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- 좌우 스테이지 전환 화살표 (SVG 아이콘으로 정확한 가운데 정렬) -->
+          <button class="vil-arrow left" id="btnStagePrev" aria-label="prev" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M15 5 L8 12 L15 19" stroke="#f5e3c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="vil-arrow right" id="btnStageNext" aria-label="next">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M9 5 L16 12 L9 19" stroke="#f5e3c8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <!-- 시작 버튼 — 행성 바로 아래, 중앙. -->
+          <button class="vil-main-btn" id="btnGoMine">
+            <i class="btn-star">✦</i><span class="lbl">시작</span><i class="btn-star">✦</i>
+          </button>
+
+          <!-- 하단: 스킬트리/대장간 -->
+          <div class="vil-bottom">
+            <div class="vil-sub-buttons">
+              <button class="vil-sub-btn skills" id="btnGoSkills">
+                <span class="vil-icon">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="6"  r="2.5" stroke="#ff4d8a" stroke-width="2"/>
+                    <circle cx="7"  cy="24" r="2.5" stroke="#ff4d8a" stroke-width="2"/>
+                    <circle cx="16" cy="24" r="2.5" stroke="#ff4d8a" stroke-width="2"/>
+                    <circle cx="25" cy="24" r="2.5" stroke="#ff4d8a" stroke-width="2"/>
+                    <path d="M16 8.5 V14 H7 V21.5 M16 14 V21.5 M16 14 H25 V21.5" stroke="#ff4d8a" stroke-width="2" fill="none"/>
+                  </svg>
+                </span>
+                <span class="lbl">스킬트리</span>
+              </button>
+              <button class="vil-sub-btn forge" id="btnGoForge">
+                <span class="vil-icon">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <!-- hammer head -->
+                    <rect x="10" y="6" width="14" height="6" rx="1" stroke="#ff4d8a" stroke-width="2" fill="#ff4d8a"/>
+                    <!-- hammer handle -->
+                    <rect x="15" y="11" width="3" height="10" stroke="#ff4d8a" stroke-width="1.5" fill="#ff4d8a" transform="rotate(20 16 16)"/>
+                    <!-- anvil base -->
+                    <path d="M5 24 L27 24 L24 28 L8 28 Z" stroke="#ff4d8a" stroke-width="2" fill="#ff4d8a"/>
+                    <!-- anvil top -->
+                    <path d="M3 22 L29 22 L26 24 L6 24 Z" stroke="#ff4d8a" stroke-width="2" fill="#ff4d8a"/>
+                  </svg>
+                </span>
+                <span class="lbl">대장간</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 새게임 확인 모달 -->
+        <div class="confirm-overlay" id="confirmOverlay">
+          <div class="confirm-box">
+            <h2>⚠ 경고</h2>
+            <p>이미 저장된 데이터가 있습니다.<br>새 게임을 시작하면 기존 데이터가<br>모두 삭제됩니다.</p>
+            <div class="confirm-buttons">
+              <button class="login-btn continue" id="confirmCancel">CANCEL</button>
+              <button class="login-btn newgame" id="confirmOk">START NEW</button>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="gl"></canvas>
+        <div id="ui">
+          <!-- HUD -->
+          <div class="hud-top passthrough" style="display: none;">
+            <button class="hud-pause" id="hudPauseBtn" aria-label="pause"
+              onclick="window.__pauseShow && window.__pauseShow()"
+              ontouchstart="window.__pauseShow && window.__pauseShow(); event.preventDefault();">
+              <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1" fill="#f5e3c8"/><rect x="14" y="5" width="4" height="14" rx="1" fill="#f5e3c8"/></svg>
+            </button>
+            <div class="timer" id="timer">20</div>
+            <!-- 우상단 — 이번 세션에서 얻은 원석/원루비 카운트. -->
+            <div class="hud-chunks">
+              <div class="hud-chunk-row">
+                <svg viewBox="0 0 48 40" class="hud-chunk-icon">
+                  <path d="M8 28 L4 18 L12 8 L24 4 L36 8 L44 16 L42 28 L32 36 L18 36 Z" fill="#5a5a5a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                  <path d="M14 14 L20 8 L26 12 L20 18 Z" fill="#9a9a9a"/>
+                </svg>
+                <b id="oreNum">0</b>
+              </div>
+              <div class="hud-chunk-row">
+                <svg viewBox="0 0 40 48" class="hud-chunk-icon">
+                  <path d="M20 4 L8 16 L4 32 L14 44 L26 44 L36 30 L34 14 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                  <path d="M14 12 L22 8 L18 24 Z" fill="#ff7088"/>
+                </svg>
+                <b id="hudRubyNum">0</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- 일시정지 오버레이 — onclick 인라인으로 어떤 listener 도 못 막게. -->
+          <div class="pause-overlay" id="pauseOverlay">
+            <div class="pause-box">
+              <div class="pause-title">일시정지</div>
+              <button class="pause-btn resume" id="btnPauseResume"
+                onclick="window.__pauseResume && window.__pauseResume()"
+                ontouchstart="window.__pauseResume && window.__pauseResume(); event.preventDefault();">계속하기</button>
+              <button class="pause-btn quit" id="btnPauseQuit"
+                onclick="window.__pauseQuit && window.__pauseQuit()"
+                ontouchstart="window.__pauseQuit && window.__pauseQuit(); event.preventDefault();">캠프로</button>
+            </div>
+          </div>
+
+          <!-- Joystick (생성/제거는 JS) -->
+          <div class="joystick-base" id="joystickBase" style="opacity:0"></div>
+          <div class="joystick-knob" id="joystickKnob" style="opacity:0"></div>
+
+          <!-- Result Panel -->
+          <div class="panel-bg" id="resultPanel">
+            <div class="panel">
+              <h1 id="resultTitle">결과</h1>
+              <!-- 광석 조각 → 주괴 -->
+              <div class="row result-row">
+                <span class="result-side">
+                  <svg viewBox="0 0 48 40" class="result-chunk-icon">
+                    <path d="M8 28 L4 18 L12 8 L24 4 L36 8 L44 16 L42 28 L32 36 L18 36 Z" fill="#5a5a5a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M14 14 L20 8 L26 12 L20 18 Z" fill="#9a9a9a"/>
+                  </svg>
+                  <b id="resultOreRaw">0</b>
+                </span>
+                <span class="result-arrow">→</span>
+                <span class="result-side">
+                  <svg viewBox="0 0 64 48" class="result-ingot-icon">
+                    <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                  </svg>
+                  <b id="resultStoneNum">0</b>
+                </span>
+              </div>
+              <!-- 루비 조각 → 보석 -->
+              <div class="row result-row">
+                <span class="result-side">
+                  <svg viewBox="0 0 40 48" class="result-chunk-icon">
+                    <path d="M20 4 L8 16 L4 32 L14 44 L26 44 L36 30 L34 14 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M14 12 L22 8 L18 24 Z" fill="#ff7088"/>
+                  </svg>
+                  <b id="resultRubyRaw">0</b>
+                </span>
+                <span class="result-arrow">→</span>
+                <span class="result-side">
+                  <svg viewBox="0 0 56 64" class="result-ingot-icon">
+                    <path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                  </svg>
+                  <b id="resultRubyNum">0</b>
+                </span>
+              </div>
+              <div class="damage-stats">
+                <div class="damage-title">피해량</div>
+                <div class="damage-row">
+                  <span class="damage-icon">
+                    <svg viewBox="0 0 48 48">
+                      <path d="M8 30 L30 8 L40 18 L18 40 Z" fill="#f5e3c8" stroke="#0a0612" stroke-width="3" stroke-linejoin="round"/>
+                      <path d="M27 11 L37 21" stroke="#ff8a4a" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                  <b class="damage-value" id="resultDmgNormal">0</b>
+                </div>
+                <div class="damage-row">
+                  <span class="damage-icon">
+                    <svg viewBox="0 0 48 48">
+                      <path d="M24 4 L29 18 L44 18 L32 27 L37 42 L24 33 L11 42 L16 27 L4 18 L19 18 Z" fill="#ff8a4a" stroke="#0a0612" stroke-width="3" stroke-linejoin="round"/>
+                      <circle cx="24" cy="24" r="7" fill="#ffd84a"/>
+                    </svg>
+                  </span>
+                  <b class="damage-value crit" id="resultDmgCrit">0</b>
+                </div>
+                <div class="damage-row">
+                  <span class="damage-icon">
+                    <svg viewBox="0 0 48 48">
+                      <path d="M28 3 L10 27 L23 27 L18 45 L39 19 L26 19 Z" fill="#6fb0ff" stroke="#0a0612" stroke-width="3" stroke-linejoin="round"/>
+                      <path d="M30 6 L20 22 L29 20" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    </svg>
+                  </span>
+                  <b class="damage-value lightning" id="resultDmgLightning">0</b>
+                </div>
+              </div>
+              <div class="result-buttons">
+                <button class="btn small-result" id="retryBtn">다시하기</button>
+                <button class="btn small-result cyan" id="toShelterBtn">캠프로</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shelter Panel -->
+          <div class="panel-bg" id="shelterPanel">
+            <div class="panel">
+              <h1 id="shelterTitle">쉼터</h1>
+              <div class="coins" id="shelterCoins">0 코인</div>
+              <div class="upgrade-list" id="upgradeList"></div>
+              <button class="btn cyan" id="toMineBtn">닫기</button>
+            </div>
+          </div>
+
+          <div id="fade"></div>
+        </div>
+        <div id="loading" style="display:none">로딩 중…</div>
+      </div>
+    </div>
+  </body>
+</html>
