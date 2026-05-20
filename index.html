@@ -427,7 +427,7 @@
       .login-field input {
         flex: 1;
         font-family: 'Patrick Hand', sans-serif;
-        font-size: 36px;
+        font-size: 48px;
         padding: 12px 26px;
         border: 3px solid #d6c4a3;
         border-radius: 24px;
@@ -560,11 +560,11 @@
         z-index: 2;
       }
       .vil-back {
-        width: 78px; height: 78px;
+        width: 94px; height: 94px;
         border: 3px solid #9ed9ec;
         background: rgba(10,6,18,0.7);
         color: #9ed9ec;
-        font-size: 36px;
+        font-size: 43px;
         border-radius: 12px;
         box-shadow: 0 0 12px rgba(158,217,236,0.35);
         cursor: pointer;
@@ -617,7 +617,7 @@
       .vil-arrow {
         position: absolute;
         top: 42%; transform: translateY(-50%);
-        width: 80px; height: 80px;
+        width: 96px; height: 96px;
         border: 3px solid #f5e3c8;
         background: rgba(10,6,18,0.6);
         border-radius: 50%;
@@ -627,7 +627,7 @@
         display: flex; align-items: center; justify-content: center;
         padding: 0;
       }
-      .vil-arrow svg { width: 36px; height: 36px; display: block; }
+      .vil-arrow svg { width: 43px; height: 43px; display: block; }
       .vil-arrow.left  { left: 18px; }
       .vil-arrow.right { right: 18px; }
       .vil-arrow:active { transform: translateY(-50%) scale(0.92); }
@@ -716,13 +716,13 @@
       /* === 서브 버튼 — 핑크 외곽 + 핑크 텍스트 글로우 + SVG 아이콘 === */
       .vil-sub-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
       .vil-sub-btn {
-        height: 92px;
+        height: 138px;
         background: #ff4d8a;            /* 외곽 = 핑크 */
         filter: drop-shadow(0 0 12px rgba(255,77,138,0.45));
         display: flex; align-items: center; justify-content: center; gap: 14px;
       }
       .vil-sub-btn .lbl {
-        font-size: 32px;
+        font-size: 44px;
         letter-spacing: 4px;
         /* 그라데이션 텍스트 — 위는 밝은 화이트, 아래는 핑크. */
         background: linear-gradient(180deg, #ffffff 0%, #ffd0e0 45%, #ff6fa0 100%);
@@ -734,7 +734,7 @@
       }
       .vil-sub-btn .vil-icon {
         display: inline-flex;
-        width: 42px; height: 42px;
+        width: 54px; height: 54px;
         align-items: center; justify-content: center;
         filter: drop-shadow(0 0 6px rgba(255,77,138,0.7));
       }
@@ -869,7 +869,7 @@
         border: 3px solid #c44226;
         background: #0a0612;
         border-radius: 12px;
-        padding: 30px 0;
+        padding: 36px 0;
         scrollbar-width: thin;
         scrollbar-color: #c44226 #0a0612;
       }
@@ -884,7 +884,7 @@
 
       /* 티어 사이 세로 연결선 — 다음 티어 unlock 됐을 때만 표시. */
       .st-vconn {
-        width: 4px; height: 36px;
+        width: 5px; height: 42px;
         margin: 0 auto;
         background: transparent;
       }
@@ -893,7 +893,7 @@
       /* 한 티어 row — 5칸 그리드. 가로 라인은 페어별 절대 위치. */
       .st-row {
         position: relative;
-        min-height: 110px;
+        min-height: 146px;
         display: flex; align-items: center; justify-content: center;
       }
       .st-grid {
@@ -922,16 +922,16 @@
       /* 노드 셀 */
       .st-cell {
         display: flex; align-items: center; justify-content: center;
-        min-height: 110px;
+        min-height: 146px;
       }
       .st-node {
         position: relative;
-        width: 86px; height: 86px;
+        width: 112px; height: 112px;
         border: 5px solid #f5e3c8;
         background: #2a1438;
-        border-radius: 18px;
+        border-radius: 22px;
         color: #f5e3c8;
-        font-size: 36px;
+        font-size: 47px;
         cursor: pointer;
         display: flex; align-items: center; justify-content: center;
         padding: 0;
@@ -968,12 +968,12 @@
       /* 업그레이드 단계 점 */
       .st-node-pips {
         position: absolute;
-        left: 50%; bottom: -34px;
+        left: 50%; bottom: -38px;
         transform: translateX(-50%);
-        display: flex; gap: 4px;
+        display: flex; gap: 6px;
       }
       .st-node-pips i {
-        width: 12px; height: 12px;
+        width: 16px; height: 16px;
         background: #2a1a2c;
         border: 2px solid #f5e3c8;
         border-radius: 3px;
@@ -987,39 +987,41 @@
       /* === 하단 상세 박스 — 모바일 친화 큰 사이즈. === */
       .st-detail {
         display: grid;
-        grid-template-columns: 150px 1fr auto;
-        gap: 22px;
+        grid-template-columns: 180px 1fr auto;
+        gap: 28px;
         align-items: center;
         border: 4px solid #c44226;
         background: #0a0612;
         border-radius: 14px;
-        padding: 22px 26px;
+        padding: 30px 30px;
         margin-bottom: 30px;
+        min-height: 190px;
       }
       .st-detail-icon {
-        width: 130px; height: 130px;
+        width: 156px; height: 156px;
         border: 4px solid #f5e3c8;
         background: #1a0e2a;
         border-radius: 14px;
-        font-size: 64px;
+        font-size: 78px;
         color: #f5e3c8;
         display: flex; align-items: center; justify-content: center;
       }
-      .st-detail-info { min-width: 0; }
+      .st-detail-info { min-width: 0; overflow: visible; }
       .st-detail-name {
-        font-size: 32px;
+        font-size: 40px;
         color: #f5e3c8;
         letter-spacing: 2px;
         margin-bottom: 6px;
         line-height: 1.1;
       }
       .st-detail-desc {
-        font-size: 28px;
+        font-size: 34px;
         color: #cdb898;
         font-family: 'Patrick Hand', sans-serif;
         font-weight: 400;
         line-height: 1.3;
         letter-spacing: 0.5px;
+        white-space: normal;
       }
       .st-detail-desc .st-var {
         font-family: 'Black Han Sans', sans-serif;
@@ -1027,12 +1029,12 @@
         font-weight: 400;
       }
       .st-detail-desc .st-var.chance { color: #ff4d8a; }
-      .st-detail-desc .st-var.damage { color: #6fb0ff; }
+      .st-detail-desc .st-var.damage { color: #ff4d8a; }
       .st-detail-pips {
-        display: flex; gap: 6px; margin-top: 12px;
+        display: flex; gap: 8px; margin-top: 16px;
       }
       .st-detail-pips i {
-        width: 22px; height: 22px;
+        width: 28px; height: 28px;
         background: #2a1a2c;
         border: 3px solid #f5e3c8;
         border-radius: 4px;
@@ -1050,18 +1052,19 @@
       }
       .st-detail-cost-icon { width: 50px; height: 44px; display: block; }
       .st-detail-cost-wrap b {
-        font-size: 36px; color: #f5e3c8;
+        font-size: 44px; color: #f5e3c8;
         font-family: 'Black Han Sans', sans-serif;
         letter-spacing: 1px;
       }
       .st-detail-btn {
-        height: 70px;
-        padding: 0 32px;
+        min-width: 176px;
+        height: 104px;
+        padding: 0 38px;
         border: 4px solid #ff6b3d;
         background: linear-gradient(180deg, rgba(255,107,61,0.18), rgba(255,77,138,0.08) 55%, #0a0612);
         color: #ff8a4a;
         border-radius: 12px;
-        font-size: 28px;
+        font-size: 38px;
         font-family: 'Black Han Sans', sans-serif;
         letter-spacing: 4px;
         cursor: pointer;
@@ -1147,7 +1150,7 @@
       .bs-preview {
         position: relative;
         width: 100%;
-        max-height: 520px;
+        max-height: 430px;
         border: 0;
         border-radius: 0;
         background: transparent;
@@ -1171,13 +1174,13 @@
         pointer-events: none;
       }
       .bs-weapon-name {
-        font-size: 30px; color: #f5e3c8;
+        font-size: 36px; color: #f5e3c8;
         letter-spacing: 3px;
         font-family: 'Black Han Sans', sans-serif;
         line-height: 1.1;
       }
       .bs-badge {
-        font-size: 16px;
+        font-size: 20px;
         letter-spacing: 2px;
         font-family: 'Patrick Hand', sans-serif;
         font-weight: 400;
@@ -1190,12 +1193,12 @@
         display: flex; align-items: center; justify-content: center;
       }
       .bs-big svg {
-        max-width: 60%;
-        max-height: 100%;
+        max-width: 46%;
+        max-height: 82%;
         filter: drop-shadow(0 6px 0 rgba(0,0,0,0.35));
       }
 
-      /* 스탯 — 2열 그리드. 행마다 [아이콘][라벨][값]. */
+      /* 스탯 — 2열 그리드. 행마다 [라벨][값]. */
       .bs-statlist {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1204,10 +1207,10 @@
       }
       .bs-statrow {
         display: grid;
-        grid-template-columns: 32px 1fr auto;
+        grid-template-columns: 1fr auto;
         align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
+        gap: 16px;
+        padding: 13px 22px;
         font-family: 'Black Han Sans', sans-serif;
         /* 행/열 구분 — 얇은 디바이더. */
         border-bottom: 1px solid rgba(245,227,200,0.10);
@@ -1216,14 +1219,21 @@
       .bs-statrow:nth-child(odd) { border-right: 1px solid rgba(245,227,200,0.10); }
       /* 마지막 줄(5,6번째)은 bottom border 제거. */
       .bs-statrow:nth-last-child(-n+2) { border-bottom: 0; }
-      .bs-staticon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-      .bs-staticon svg { width: 100%; height: 100%; }
       .bs-statlabel {
-        color: #cdb898; font-size: 26px; letter-spacing: 1px;
+        color: #cdb898; font-size: 32px; letter-spacing: 1px;
         font-family: 'Black Han Sans', sans-serif;
+        display: flex; align-items: center; gap: 14px;
+      }
+      .bs-statlabel::before {
+        content: '✦';
+        color: currentColor;
+        font-size: 26px;
+        line-height: 1;
+        transform: translateY(-1px);
+        text-shadow: 0 0 8px rgba(245,227,200,0.35);
       }
       .bs-statval {
-        color: #f5e3c8; font-size: 30px; letter-spacing: 0.5px;
+        color: #f5e3c8; font-size: 36px; letter-spacing: 0.5px;
         font-family: 'Black Han Sans', sans-serif;
       }
       .bs-skillrow { position: relative; cursor: pointer; }
@@ -1269,7 +1279,7 @@
       }
       .bs-statbonus {
         color: #ff4d8a;
-        font-size: 28px;
+        font-size: 32px;
         margin-left: 6px;
         font-family: 'Black Han Sans', sans-serif;
         font-weight: 700;
@@ -1278,7 +1288,7 @@
       /* 강화 효과 — 박스 X, 가로줄 zebra. 5줄 항상 표시, 남은 세로 공간 채움. */
       .bs-enhance-bonus {
         flex: 1;
-        margin-top: 16px;
+        margin-top: 10px;
         display: flex; flex-direction: column;
         min-height: 0;
         overflow: hidden;
@@ -1296,7 +1306,7 @@
       .bs-bonus-rowgroup:nth-child(even) { background: rgba(255,77,138,0.05); }
       .bs-bonus-cell {
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 24px;
+        font-size: 28px;
         letter-spacing: 1px;
         padding: 6px 6px;
         text-align: left;
@@ -1308,18 +1318,18 @@
 
       /* 장착+강화 버튼 row — 프리뷰 하단 가운데. */
       .bs-action-row {
-        display: flex; gap: 10px; align-items: center; justify-content: center;
+        display: flex; gap: 14px; align-items: center; justify-content: center;
       }
       .bs-equip-btn {
-        min-width: 130px;
-        height: 60px;
-        padding: 0 22px;
+        min-width: 195px;
+        height: 90px;
+        padding: 0 30px;
         border: 3px solid #ff4d8a;
         background: rgba(10,6,18,0.92);
         color: #ff4d8a;
         border-radius: 14px;
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 24px;
+        font-size: 34px;
         letter-spacing: 4px;
         cursor: pointer;
         box-shadow: 0 0 18px rgba(255,77,138,0.35);
@@ -1337,11 +1347,11 @@
 
       /* 강화 버튼 — grid cell 안에 자연 배치 (justify-items: center 로 가운데). */
       .bs-main-btn {
-        min-width: 130px;
-        height: 60px; padding: 0 26px;
+        min-width: 195px;
+        height: 90px; padding: 0 34px;
         border-radius: 14px;
         background: rgba(10,6,18,0.92);
-        font-size: 24px;
+        font-size: 34px;
         letter-spacing: 4px;
         cursor: pointer;
         font-family: 'Black Han Sans', sans-serif;
@@ -1383,7 +1393,7 @@
       }
       .bs-main-toast.show { opacity: 1; }
       .bs-main-btn:active  { transform: translateY(2px); }
-      .bs-main-btn svg { width: 26px; height: 30px; flex: none; }
+      .bs-main-btn svg { width: 34px; height: 40px; flex: none; }
       .bs-main-btn .cost-num { color: #f5e3c8; font-family: 'Black Han Sans', sans-serif; text-shadow: none; }
       .bs-glow-label {
         color: #ffb37a;
@@ -1395,9 +1405,9 @@
         border: 3px solid #c44226;
         background: #0a0612;
         border-radius: 12px;
-        padding: 14px;
+        padding: 10px;
         display: flex; flex-direction: column;
-        gap: 10px;
+        gap: 7px;
       }
       .bs-list-title {
         font-size: 18px; color: #ff4d8a;
@@ -1409,7 +1419,7 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         grid-template-rows: repeat(2, 1fr);
-        gap: 8px;
+        gap: 7px;
       }
       .bs-slot {
         position: relative;
@@ -1447,7 +1457,7 @@
         display: none;
         align-items: center; justify-content: center;
         z-index: 400;
-        padding: 30px;
+        padding: 22px;
       }
       .bs-enhance-overlay.show { display: flex; }
       .bs-enhance-box {
@@ -1589,26 +1599,26 @@
       }
       .bs-enh-resources-top {
         display: flex; gap: 22px;
-        padding: 12px 22px;
+        padding: 16px 30px;
         border: 3px solid #c44226;
         background: rgba(10,6,18,0.85);
         border-radius: 14px;
         font-family: 'Black Han Sans', sans-serif;
-        max-width: 540px;
+        max-width: 780px;
       }
       .bs-enh-res {
         display: flex; align-items: center; gap: 8px;
       }
-      .bs-enh-res svg { width: 36px; height: 36px; display: block; }
-      .bs-enh-res b { font-size: 28px; color: #f5e3c8; letter-spacing: 0.5px; }
+      .bs-enh-res svg { width: 46px; height: 46px; display: block; }
+      .bs-enh-res b { font-size: 38px; color: #f5e3c8; letter-spacing: 0.5px; }
 
-      .bs-enhance-box.mini { max-width: 560px; padding: 24px 24px 20px; }
+      .bs-enhance-box.mini { max-width: 820px; padding: 34px 34px 30px; }
 
       .bs-enh-levellabel {
         position: absolute; left: 50%; top: 8px;
         transform: translateX(-50%);
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 28px;
+        font-size: 38px;
         letter-spacing: 4px;
         color: #f5e3c8;
         z-index: 4;
@@ -1619,8 +1629,8 @@
 
       .bs-enh-arena {
         position: relative;
-        height: 420px;        /* 60px 키워 라벨/결과 안 겹치게 */
-        margin-bottom: 20px;
+        height: 520px;
+        margin-bottom: 24px;
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
         border-radius: 14px;
@@ -1706,7 +1716,7 @@
       /* 아이템 박스 — 가운데 곡괭이 SVG. */
       .bs-enh-itembox {
         position: relative; z-index: 2;
-        width: 160px; height: 160px;
+        width: 220px; height: 220px;
         border: 3px solid #c44226;
         background: #1a0e2a;
         border-radius: 14px;
@@ -1753,7 +1763,7 @@
         position: absolute; left: 50%; top: 56px;
         transform: translateX(-50%) translateY(-12px);
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 36px;
+        font-size: 48px;
         letter-spacing: 4px;
         opacity: 0;
         z-index: 3;
@@ -1794,7 +1804,7 @@
       }
       .bs-enh-gain-row {
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 26px;
+        font-size: 34px;
         letter-spacing: 1px;
         text-align: center;
         padding: 8px 22px;
@@ -1817,31 +1827,31 @@
       }
       .bs-mini-info {
         display: flex; flex-direction: column; gap: 12px;
-        padding: 14px 6px;
-        margin-bottom: 18px;
+        padding: 18px 6px;
+        margin-bottom: 22px;
       }
       .bs-mini-row {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 12px 16px;
+        padding: 18px 22px;
         background: #14081a;
         border: 2px solid #2a1a2c;
         border-radius: 10px;
       }
       .bs-mini-label {
         font-family: 'Patrick Hand', sans-serif; font-weight: 400;
-        font-size: 22px; color: #cdb898; letter-spacing: 1px;
+        font-size: 32px; color: #cdb898; letter-spacing: 1px;
       }
-      .bs-mini-row b { font-size: 28px; font-family: 'Black Han Sans', sans-serif; letter-spacing: 1px; }
+      .bs-mini-row b { font-size: 40px; font-family: 'Black Han Sans', sans-serif; letter-spacing: 1px; }
       .bs-mini-row b.success { color: #9ed9ec; }
       .bs-mini-row b.danger  { color: #c44226; }
       .bs-mini-try {
         width: 100%;
-        height: 72px;
+        height: 108px;
         border: 3px solid #ff6b3d;
         background: linear-gradient(180deg, rgba(255,107,61,0.22), rgba(255,77,138,0.10) 58%, rgba(10,6,18,0.96));
         color: #ffb37a;
         border-radius: 12px;
-        font-size: 30px;
+        font-size: 42px;
         font-family: 'Black Han Sans', sans-serif;
         letter-spacing: 4px;
         cursor: pointer;
@@ -1849,7 +1859,7 @@
         margin-top: 14px;
         box-shadow: 0 0 10px rgba(255,107,61,0.34), inset 0 0 14px rgba(255,216,74,0.06);
       }
-      .bs-mini-try svg { width: 30px; height: 36px; flex: none; }
+      .bs-mini-try svg { width: 42px; height: 50px; flex: none; }
       .bs-mini-try .cost-num { color: #f5e3c8; text-shadow: none; }
       .bs-mini-try:active { transform: translateY(2px); }
       /* 비용 부족 — 채도 낮춤 + 클릭은 가능(안내 표시). */
@@ -1864,14 +1874,14 @@
       /* 강화 초기화 버튼 */
       .bs-mini-reset {
         width: 100%;
-        height: 52px;
+        height: 78px;
         margin-top: 10px;
         border: 2px solid #5a3a4a;
         background: transparent;
         color: #a89878;
         border-radius: 10px;
         font-family: 'Patrick Hand', sans-serif;
-        font-size: 22px;
+        font-size: 32px;
         letter-spacing: 3px;
         cursor: pointer;
       }
@@ -1957,7 +1967,7 @@
       /* 대장간 — 크림(비활성/미구현 톤). */
       .village-btn.forge   { border-color: #f5e3c8; color: #f5e3c8; opacity: 0.85; }
     </style>
-    <script type="module" crossorigin src="./assets/index-DCFMw2L8.js"></script>
+    <script type="module" crossorigin src="./assets/index-CwbCcmdx.js"></script>
   </head>
   <body>
     <div id="app">
@@ -1977,7 +1987,7 @@
             </div>
             <div class="login-field">
               <label>CODE</label>
-              <input type="text" id="loginPassword" autocomplete="off" maxlength="30" placeholder="코드 입력" />
+              <input type="tel" id="loginPassword" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="30" placeholder="코드 입력" />
             </div>
             <div class="login-buttons">
               <button class="login-btn continue" id="btnContinue"><i class="btn-star">✦</i>LOAD</button>
@@ -2078,32 +2088,26 @@
             <!-- 기본 스탯 — 2열 × 3행. 1행: 공격력/공격속도, 2행: 치명타확률/치명타데미지, 3행: 경도관통/특수능력. -->
             <div class="bs-statlist">
               <div class="bs-statrow">
-                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M12 2 L15 9 L22 10 L17 15 L18 22 L12 18 L6 22 L7 15 L2 10 L9 9 Z" fill="#ff4d8a" stroke="#08040f" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
                 <span class="bs-statlabel">공격력</span>
                 <span class="bs-statval" id="bsAtkVal">13</span>
               </div>
               <div class="bs-statrow">
-                <span class="bs-staticon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#9ed9ec" stroke-width="2"/><path d="M12 6 V12 L16 14" stroke="#9ed9ec" stroke-width="2" stroke-linecap="round" fill="none"/></svg></span>
                 <span class="bs-statlabel">공격속도</span>
                 <span class="bs-statval" id="bsSpdVal">0.91</span>
               </div>
               <div class="bs-statrow">
-                <span class="bs-staticon"><svg viewBox="0 0 24 24"><polygon points="12,2 14,9 22,9 16,14 18,22 12,17 6,22 8,14 2,9 10,9" fill="none" stroke="#ff8a4a" stroke-width="2" stroke-linejoin="round"/></svg></span>
                 <span class="bs-statlabel">치명타확률</span>
                 <span class="bs-statval" id="bsCritRateVal">0%</span>
               </div>
               <div class="bs-statrow">
-                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M12 2 L7 12 L11 12 L10 22 L17 10 L13 10 Z" fill="#ff5a5a" stroke="#08040f" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
                 <span class="bs-statlabel">치명타데미지</span>
                 <span class="bs-statval" id="bsCritDmgVal">125%</span>
               </div>
               <div class="bs-statrow">
-                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M3 12 L21 12" stroke="#ffd84a" stroke-width="2" stroke-linecap="round"/><path d="M15 6 L21 12 L15 18" stroke="#ffd84a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="3" y="6" width="6" height="12" fill="none" stroke="#ffd84a" stroke-width="2"/></svg></span>
                 <span class="bs-statlabel">경도관통</span>
                 <span class="bs-statval" id="bsPenVal">1</span>
               </div>
               <div class="bs-statrow bs-skillrow" id="bsSkillRow">
-                <span class="bs-staticon"><svg viewBox="0 0 24 24"><path d="M13 2 L4 14 L11 14 L10 22 L20 9 L13 9 Z" fill="#7dffb2" stroke="#08040f" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
                 <span class="bs-statlabel">특수능력</span>
                 <span class="bs-statval" id="bsSkillVal">청크수명+</span>
                 <!-- 클릭 시 위로 뜨는 툴팁. -->
