@@ -58,12 +58,18 @@
         top: 80px;
         left: 40px;
         right: 40px;
-        display: flex; justify-content: space-between; align-items: center;
+        height: 150px;
+        display: block;
         pointer-events: none;
       }
       .timer {
+        position: absolute;
+        left: 0;
+        top: 88px;
+        width: 72px;
+        text-align: center;
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 110px;
+        font-size: 74px;
         color: #f5e9d6;
         text-shadow: 6px 6px 0 #1a1006, 0 0 20px rgba(255,107,61,0.35);
         line-height: 1;
@@ -71,16 +77,46 @@
       }
       .timer.warn { color: #c44226; animation: pulse 0.4s infinite alternate; }
       @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+      .hud-exp {
+        position: absolute;
+        left: 92px;
+        width: 520px;
+        top: 0;
+        height: 72px;
+        box-sizing: border-box;
+        border: 3px solid #f5e3c8;
+        background: rgba(10,6,18,0.82);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0 12px rgba(255,77,138,0.22);
+      }
+      .hud-exp-fill {
+        position: absolute; left: 0; top: 0; bottom: 0;
+        width: 0%;
+        background: linear-gradient(90deg, #ff4d8a, #ff9ac0);
+      }
+      .hud-exp-label {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 26px;
+        color: #f5e3c8;
+        text-shadow: 2px 2px 0 #0a0612;
+        letter-spacing: 1px;
+      }
 
       /* 광산 좌상단 — 일시정지 버튼 (timer 옆). */
       .hud-pause {
-        width: 78px; height: 78px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 72px; height: 72px;
+        box-sizing: border-box;
         border: 3px solid #f5e3c8;
         background: rgba(10,6,18,0.7);
         border-radius: 14px;
         cursor: pointer; pointer-events: auto;
         display: flex; align-items: center; justify-content: center;
-        margin-right: 18px;
         box-shadow: 0 4px 0 rgba(0,0,0,0.4);
       }
       .hud-pause svg { width: 36px; height: 36px; }
@@ -99,54 +135,154 @@
       .pause-overlay.show { display: flex; pointer-events: auto !important; }
       .pause-overlay.show * { pointer-events: auto; }
       .pause-box {
-        width: 560px;
+        width: 650px;
         background: #0a0612;
         border: 4px solid #c44226;
         box-shadow: 0 0 0 4px #f5e3c8, 0 10px 0 rgba(0,0,0,0.55);
         border-radius: 18px;
-        padding: 40px 36px;
-        display: flex; flex-direction: column; gap: 18px;
+        padding: 48px 44px;
+        display: flex; flex-direction: column; gap: 22px;
         font-family: 'Black Han Sans', sans-serif;
       }
       .pause-title {
-        font-size: 48px; color: #f5e3c8;
+        font-size: 54px; color: #f5e3c8;
         letter-spacing: 6px; text-align: center;
-        margin-bottom: 12px;
+        margin-bottom: 18px;
       }
       .pause-btn {
-        height: 72px;
+        height: 96px;
         border-radius: 14px;
         background: #0a0612;
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 32px;
+        font-size: 38px;
         letter-spacing: 6px;
         cursor: pointer;
         pointer-events: auto;
         touch-action: manipulation;
       }
       .pause-btn.resume { border: 4px solid #9ed9ec; color: #9ed9ec; }
+      .pause-btn.restart { border: 4px solid #ffd84a; color: #ffd84a; }
       .pause-btn.quit   { border: 4px solid #c44226; color: #c44226; }
       .pause-btn:active { transform: translateY(2px); }
+      .augment-overlay {
+        position: absolute; inset: 0;
+        z-index: 90;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+      }
+      .augment-overlay::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.46);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        z-index: 0;
+      }
+      .augment-overlay.hidden { display: none; }
+      .augment-overlay.closing .aug-card {
+        opacity: 0;
+        transform: scale(0.92);
+        transition: opacity 0.26s, transform 0.26s;
+      }
+      .augment-cards {
+        width: 1010px;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .aug-card {
+        position: relative;
+        height: 228px;
+        border: 5px solid var(--aug-color);
+        background: linear-gradient(180deg,
+          color-mix(in srgb, var(--aug-color) 62%, #5e5364),
+          color-mix(in srgb, var(--aug-color) 42%, #302536)
+        );
+        box-shadow: inset 0 0 0 6px rgba(245,227,200,0.72), 0 0 0 3px rgba(10,6,18,0.8);
+        color: white;
+        display: grid;
+        grid-template-columns: 126px 1fr 110px;
+        align-items: center;
+        gap: 22px;
+        padding: 18px 24px;
+        font-family: 'Black Han Sans', sans-serif;
+        text-align: left;
+        cursor: pointer;
+        transform: scale(0.72);
+        opacity: 0;
+        animation: augPop 0.42s cubic-bezier(.15,1.35,.25,1) forwards;
+      }
+      @keyframes augPop { to { transform: scale(1); opacity: 1; } }
+      .aug-card.dim { filter: brightness(0.42) saturate(0.5); }
+      .aug-card.selected { box-shadow: inset 0 0 0 6px #fff1c8, 0 0 28px var(--aug-color); }
+      .aug-icon {
+        width: 96px; height: 96px;
+        display: flex; align-items: center; justify-content: center;
+        border: 7px solid color-mix(in srgb, var(--aug-color) 65%, #0a0612);
+        background: #0a0612;
+        font-size: 52px;
+        box-shadow: inset 0 0 0 4px #f5e3c8;
+      }
+      .aug-title {
+        display: block;
+        font-size: 34px;
+        text-shadow: 3px 3px 0 rgba(0,0,0,0.35);
+        margin-bottom: 78px;
+      }
+      .aug-desc {
+        display: block;
+        font-family: 'Patrick Hand', sans-serif;
+        font-size: 34px;
+        font-weight: 700;
+        text-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+      }
+      .aug-desc b {
+        color: #ff4d8a;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 40px;
+        letter-spacing: 1px;
+      }
+      .aug-rarity {
+        justify-self: end;
+        align-self: start;
+        color: #f5e3c8;
+        background: color-mix(in srgb, var(--aug-color) 72%, #0a0612);
+        border: 2px solid var(--aug-color);
+        border-radius: 6px;
+        padding: 5px 8px;
+        font-size: 24px;
+        text-shadow: 2px 2px 0 rgba(0,0,0,0.45);
+      }
 
       /* HUD 자원 카운트 — 결과 패널과 동일한 청크 아이콘. */
       .hud-chunks {
+        position: absolute;
+        right: 24px;
+        top: 0;
         background: rgba(10,6,18,0.7);
         border: 3px solid #f5e3c8;
-        border-radius: 16px;
-        padding: 16px 24px;
-        display: flex; flex-direction: column; gap: 12px;
-        min-width: 160px;
+        border-radius: 14px;
+        padding: 0 14px;
+        height: 72px;
+        box-sizing: border-box;
+        display: flex; flex-direction: row; align-items: center; gap: 18px;
+        width: 320px;
       }
       .hud-chunk-row {
-        display: flex; align-items: center; gap: 14px;
+        display: flex; align-items: center; gap: 10px;
         font-family: 'Black Han Sans', sans-serif;
       }
-      .hud-chunk-icon { width: 52px; height: 52px; display: block; }
+      .hud-chunk-icon { width: 46px; height: 46px; display: block; }
       .hud-chunk-row b {
-        font-size: 48px; color: #f5e3c8;
+        font-size: 42px; color: #f5e3c8;
         text-shadow: 3px 3px 0 #0a0612;
         line-height: 1;
-        min-width: 60px; text-align: right;
+        min-width: 36px; text-align: right;
       }
 
       /* === Joystick === */
@@ -197,6 +333,7 @@
         text-align: center; color: #f5e3c8;
         letter-spacing: 6px;
       }
+      #resultTitle { display: none; }
       .panel .row {
         display: flex; justify-content: space-between; align-items: center;
         background: #14081a;
@@ -539,6 +676,15 @@
         box-shadow: 0 0 9px rgba(245,227,200,0.28), inset 0 0 14px rgba(245,227,200,0.06);
       }
       .login-btn:disabled { opacity: 0.5; pointer-events: none; }
+      .login-version {
+        position: absolute;
+        top: 26px; right: 30px;
+        font-family: 'Patrick Hand', system-ui, sans-serif;
+        font-size: 28px;
+        color: rgba(245,227,200,0.9);
+        text-shadow: 0 2px 0 rgba(0,0,0,0.55);
+        pointer-events: none;
+      }
 
       /* 토스트 — 로그인 박스 위에 떠있는 검정 라운드 박스. 메시지 없으면 숨김. */
       .login-toast {
@@ -613,7 +759,7 @@
       /* 상단 — 뒤로 + 자원 바 */
       .vil-top {
         position: absolute; top: 30px; left: 30px; right: 30px;
-        display: flex; justify-content: space-between; align-items: flex-start;
+        display: flex; align-items: flex-start; gap: 18px;
         z-index: 2;
       }
       .vil-back {
@@ -626,16 +772,40 @@
         box-shadow: 0 0 12px rgba(158,217,236,0.35);
         cursor: pointer;
       }
+      .vil-rank-btn {
+        width: 190px; height: 94px;
+        border: 3px solid #ffd84a;
+        background: linear-gradient(180deg, rgba(55,29,35,0.86), rgba(16,8,20,0.9));
+        color: #ffd84a;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        border-radius: 12px;
+        text-shadow: 0 0 10px rgba(255,216,74,0.7);
+        box-shadow: 0 0 12px rgba(255,216,74,0.36);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .vil-rank-btn svg {
+        width: 40px;
+        height: 40px;
+        filter: drop-shadow(0 0 7px rgba(255,216,74,0.75));
+      }
       .vil-resources {
+        margin-left: auto;
         width: 500px;
+        height: 94px;
+        box-sizing: border-box;
         border: 3px solid #ff4d8a;
         background: rgba(10,6,18,0.8);
         border-radius: 12px;
-        padding: 12px 20px;
+        padding: 12px 22px;
         display: grid;
         grid-template-columns: 64px 1fr 64px 1fr;
-        grid-auto-rows: 46px;
-        column-gap: 12px;
+        grid-template-rows: 1fr;
+        column-gap: 14px;
         row-gap: 2px;
         box-shadow: 0 0 12px rgba(255,77,138,0.35);
       }
@@ -654,21 +824,115 @@
         font-family: 'Black Han Sans', sans-serif;
         letter-spacing: 0.5px;
       }
-      .vil-res:nth-child(1) .vil-res-icon, .vil-res:nth-child(2) .vil-res-icon,
-      .vil-res:nth-child(3) .vil-res-icon, .vil-res:nth-child(4) .vil-res-icon { grid-column: 1; }
-      .vil-res:nth-child(1) b, .vil-res:nth-child(2) b,
-      .vil-res:nth-child(3) b, .vil-res:nth-child(4) b { grid-column: 2; }
-      .vil-res:nth-child(5) .vil-res-icon, .vil-res:nth-child(6) .vil-res-icon,
-      .vil-res:nth-child(7) .vil-res-icon { grid-column: 3; }
-      .vil-res:nth-child(5) b, .vil-res:nth-child(6) b,
-      .vil-res:nth-child(7) b { grid-column: 4; }
-      .vil-res:nth-child(1) .vil-res-icon, .vil-res:nth-child(1) b,
-      .vil-res:nth-child(5) .vil-res-icon, .vil-res:nth-child(5) b { grid-row: 1; }
-      .vil-res:nth-child(2) .vil-res-icon, .vil-res:nth-child(2) b,
-      .vil-res:nth-child(6) .vil-res-icon, .vil-res:nth-child(6) b { grid-row: 2; }
-      .vil-res:nth-child(3) .vil-res-icon, .vil-res:nth-child(3) b,
-      .vil-res:nth-child(7) .vil-res-icon, .vil-res:nth-child(7) b { grid-row: 3; }
-      .vil-res:nth-child(4) .vil-res-icon, .vil-res:nth-child(4) b { grid-row: 4; }
+      .vil-res:nth-child(2), .vil-res:nth-child(3), .vil-res:nth-child(4),
+      .vil-res:nth-child(6), .vil-res:nth-child(7) { display: none; }
+      .vil-res:nth-child(1) .vil-res-icon { grid-column: 1; grid-row: 1; }
+      .vil-res:nth-child(1) b { grid-column: 2; grid-row: 1; }
+      .vil-res:nth-child(5) .vil-res-icon { grid-column: 3; grid-row: 1; }
+      .vil-res:nth-child(5) b { grid-column: 4; grid-row: 1; }
+
+      .ranking-overlay {
+        position: absolute; inset: 0;
+        z-index: 80;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.58);
+        pointer-events: auto;
+      }
+      .ranking-overlay.show { display: flex; }
+      .ranking-panel {
+        position: relative;
+        width: 900px;
+        max-height: 1420px;
+        border: 4px solid #ffd84a;
+        border-radius: 22px;
+        background: rgba(10,6,18,0.96);
+        box-shadow: 0 0 28px rgba(255,216,74,0.35);
+        padding: 34px;
+        font-family: 'Black Han Sans', sans-serif;
+        color: #f5e3c8;
+      }
+      .ranking-head {
+        position: absolute;
+        top: 34px;
+        right: 34px;
+        margin: 0;
+      }
+      .ranking-title {
+        display: none;
+        color: #ffd84a;
+        font-size: 62px;
+        text-shadow: 0 0 12px rgba(255,216,74,0.65);
+      }
+      .ranking-close {
+        width: 82px; height: 82px;
+        border: 3px solid #f5e3c8;
+        border-radius: 12px;
+        background: rgba(10,6,18,0.8);
+        color: #f5e3c8;
+        font-size: 56px;
+      }
+      .ranking-stage-tabs {
+        display: flex;
+        justify-content: flex-start;
+        gap: 22px;
+        margin: 0 110px 22px 0;
+      }
+      .ranking-planet-btn {
+        width: 112px; height: 112px;
+        border: 3px solid #0a0612;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 35% 28%, rgba(255,255,255,0.23), transparent 35%),
+          linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.18)),
+          var(--planet);
+        box-shadow: inset -18px -22px 0 rgba(0,0,0,0.13), 0 0 12px rgba(0,0,0,0.45);
+      }
+      .ranking-planet-btn.active {
+        border-color: #ffd84a;
+        box-shadow: inset -18px -22px 0 rgba(0,0,0,0.13), 0 0 18px rgba(255,216,74,0.82);
+      }
+      .ranking-table-head,
+      .ranking-row {
+        display: grid;
+        grid-template-columns: 110px 1fr 250px;
+        align-items: center;
+        gap: 18px;
+      }
+      .ranking-table-head {
+        color: #ffd84a;
+        font-size: 34px;
+        padding: 0 20px 14px;
+      }
+      .ranking-rows {
+        min-height: 920px;
+      }
+      .ranking-row {
+        min-height: 92px;
+        padding: 0 20px;
+        border-top: 2px solid rgba(245,227,200,0.16);
+        font-size: 38px;
+      }
+      .ranking-row b { color: #ffd84a; }
+      .ranking-row span {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .ranking-row strong {
+        justify-self: end;
+        color: #9ed9ec;
+        font-weight: normal;
+      }
+      .ranking-loading {
+        min-height: 920px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 42px;
+        color: #f5e3c8;
+      }
 
       /* 좌우 화살표 — 행성 옆 */
       .vil-arrow {
@@ -799,16 +1063,7 @@
 
       /* 로그인 화면 하단 스튜디오 크레딧. */
       .login-studio {
-        position: absolute;
-        bottom: 14px; left: 50%;
-        transform: translateX(-50%);
-        font-family: 'Patrick Hand', system-ui, sans-serif;
-        font-weight: 300;
-        font-size: 24px;
-        color: #ffffff;
-        letter-spacing: 0.5px;
-        text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
-        pointer-events: none;
+        display: none;
       }
       /* [LEGACY] 마을 박스 스타일 — 새 레이아웃 적용 후 미사용. */
       .village-box-legacy-unused {
@@ -2031,13 +2286,14 @@
       /* 대장간 — 크림(비활성/미구현 톤). */
       .village-btn.forge   { border-color: #f5e3c8; color: #f5e3c8; opacity: 0.85; }
     </style>
-    <script type="module" crossorigin src="./assets/index-CivTxZtz.js"></script>
+    <script type="module" crossorigin src="./assets/index-BgttQ0zG.js"></script>
   </head>
   <body>
     <div id="app">
       <div id="stage">
         <!-- Login Screen — 배경 이미지에 타이틀/행성/캐릭터 포함됨. -->
         <div id="loginScreen">
+          <div class="login-version">v0.1</div>
           <div class="login-studio">내떡진 게임즈</div>
           <!-- 에러/상태 토스트 — 로그인 박스 위에 검정 라운드 박스로 떠있음. -->
           <div class="login-toast" id="loginToastWrap">
@@ -2263,6 +2519,15 @@
           <!-- 상단: 자원 바 + 뒤로 -->
           <div class="vil-top">
             <button class="vil-back" id="btnVilBack">←</button>
+            <button class="vil-rank-btn" id="btnRanking">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M18 10h28v10c0 12-6 20-14 22-8-2-14-10-14-22V10Z" fill="#ffd84a" stroke="#0a0612" stroke-width="4" stroke-linejoin="round"/>
+                <path d="M18 16H8v8c0 8 5 14 13 15" fill="none" stroke="#ffd84a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M46 16h10v8c0 8-5 14-13 15" fill="none" stroke="#ffd84a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M28 42h8v8h10v8H18v-8h10v-8Z" fill="#ffd84a" stroke="#0a0612" stroke-width="4" stroke-linejoin="round"/>
+              </svg>
+              <span>랭킹</span>
+            </button>
             <div class="vil-resources">
               <!-- 돌멩이 (stage 1 시작 광석) — 회색 돌. -->
               <div class="vil-res">
@@ -2368,6 +2633,18 @@
             </div>
           </div>
 
+          <div class="ranking-overlay" id="rankingOverlay">
+            <div class="ranking-panel">
+              <div class="ranking-head">
+                <div class="ranking-title">랭킹</div>
+                <button class="ranking-close" id="rankingClose">×</button>
+              </div>
+              <div class="ranking-stage-tabs" id="rankingStageTabs"></div>
+              <div class="ranking-table-head"><span>순위</span><span>닉네임</span><span>데미지</span></div>
+              <div class="ranking-rows" id="rankingRows"></div>
+            </div>
+          </div>
+
           <!-- 좌우 스테이지 전환 화살표 (SVG 아이콘으로 정확한 가운데 정렬) -->
           <button class="vil-arrow left" id="btnStagePrev" aria-label="prev" style="display:none">
             <svg viewBox="0 0 24 24" fill="none">
@@ -2435,6 +2712,10 @@
         <div id="ui">
           <!-- HUD -->
           <div class="hud-top passthrough" style="display: none;">
+            <div class="hud-exp">
+              <div class="hud-exp-fill" id="hudExpFill"></div>
+              <div class="hud-exp-label" id="hudExpLabel">Lv.1 0 / 10</div>
+            </div>
             <button class="hud-pause" id="hudPauseBtn" aria-label="pause"
               onclick="window.__pauseShow && window.__pauseShow()"
               ontouchstart="window.__pauseShow && window.__pauseShow(); event.preventDefault();">
@@ -2467,10 +2748,17 @@
               <button class="pause-btn resume" id="btnPauseResume"
                 onclick="window.__pauseResume && window.__pauseResume()"
                 ontouchstart="window.__pauseResume && window.__pauseResume(); event.preventDefault();">계속하기</button>
+              <button class="pause-btn restart" id="btnPauseRestart"
+                onclick="window.__pauseRestart && window.__pauseRestart()"
+                ontouchstart="window.__pauseRestart && window.__pauseRestart(); event.preventDefault();">다시하기</button>
               <button class="pause-btn quit" id="btnPauseQuit"
                 onclick="window.__pauseQuit && window.__pauseQuit()"
                 ontouchstart="window.__pauseQuit && window.__pauseQuit(); event.preventDefault();">캠프로</button>
             </div>
+          </div>
+
+          <div class="augment-overlay hidden" id="augmentOverlay">
+            <div class="augment-cards" id="augmentCards"></div>
           </div>
 
           <!-- Joystick (생성/제거는 JS) -->
