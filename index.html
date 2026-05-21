@@ -232,8 +232,21 @@
         color: #c44226;
         font-family: 'Black Han Sans', sans-serif;
       }
+      .mining-stats {
+        margin-top: 8px;
+        padding: 18px 20px 20px;
+        border: 3px solid rgba(245,227,200,0.82);
+        border-radius: 12px;
+        background: rgba(10,6,18,0.45);
+      }
+      .mining-stats .result-row {
+        border: 0;
+        background: transparent;
+        padding: 10px 24px;
+        margin: 4px 0;
+      }
       .result-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 30px; }
-      .result-buttons .btn.small-result { margin-top: 0; font-size: 44px; padding: 22px 0; letter-spacing: 6px; }
+      .result-buttons .btn.small-result { margin-top: 0; font-size: 44px; padding: 34px 0; letter-spacing: 6px; }
       .result-buttons .btn.small-result {
         background: linear-gradient(180deg, rgba(255,107,61,0.13), rgba(255,107,61,0.05) 54%, #0a0612);
         box-shadow: 0 0 9px rgba(255,107,61,0.28), inset 0 0 14px rgba(255,107,61,0.06);
@@ -245,35 +258,103 @@
       }
       .damage-stats {
         margin-top: 26px;
-        padding: 18px 20px;
+        padding: 20px 20px 18px;
         border: 3px solid rgba(245,227,200,0.75);
         border-radius: 12px;
         background: rgba(10,6,18,0.45);
       }
+      .result-section-title,
       .damage-title {
         text-align: center;
         font-family: 'Black Han Sans', sans-serif;
-        font-size: 36px;
+        font-size: 46px;
         color: #f5e3c8;
         letter-spacing: 4px;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
       }
       .damage-row {
         display: grid;
-        grid-template-columns: 54px 1fr;
+        grid-template-columns: 58px 230px 1fr 116px;
         align-items: center;
-        gap: 16px;
-        min-height: 54px;
+        gap: 14px;
+        min-height: 58px;
+      }
+      .damage-label {
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 26px;
+        color: #f5e3c8;
+        white-space: nowrap;
+        letter-spacing: 1px;
       }
       .damage-icon svg { width: 48px; height: 48px; display: block; }
+      .damage-icon-text {
+        display: block;
+        width: 52px;
+        text-align: center;
+        font-size: 42px;
+        line-height: 1;
+        filter: drop-shadow(0 3px 0 #0a0612);
+      }
+      .damage-icon-combo {
+        position: relative;
+        display: block;
+        width: 52px;
+        height: 52px;
+        filter: drop-shadow(0 3px 0 #0a0612);
+      }
+      .damage-icon-combo .pick {
+        position: absolute;
+        left: 2px;
+        top: 12px;
+        font-size: 32px;
+        transform: rotate(-12deg);
+      }
+      .damage-icon-combo .boom {
+        position: absolute;
+        right: 0;
+        top: 0;
+        font-size: 34px;
+      }
+      .damage-bar-track {
+        height: 34px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .damage-bar {
+        width: 0%;
+        min-width: 4px;
+        height: 100%;
+        border-radius: 0;
+        background: linear-gradient(180deg, #ff6fae, #ff2f87);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
+        transition: width 0.3s cubic-bezier(.18,.92,.2,1);
+      }
+      .damage-bar.crit,
+      .damage-bar.lightning { background: linear-gradient(180deg, #ff6fae, #ff2f87); }
       .damage-value {
         justify-self: end;
         font-family: 'Black Han Sans', sans-serif;
         font-size: 34px;
         color: #f5e3c8;
       }
-      .damage-value.crit { color: #ff8a4a; }
-      .damage-value.lightning { color: #6fb0ff; }
+      .damage-value.crit,
+      .damage-value.lightning { color: #f5e3c8; }
+      .damage-total {
+        margin-top: 10px;
+        padding-top: 12px;
+        border-top: 2px solid rgba(245,227,200,0.18);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 36px;
+        color: #f5e3c8;
+      }
+      .damage-total b {
+        color: #f5e3c8;
+        font-size: 40px;
+      }
       .btn {
         display: block; width: 100%;
         background: #0a0612;
@@ -911,7 +992,7 @@
         cursor: pointer;
         display: flex; align-items: center; justify-content: center;
         padding: 0;
-        z-index: 1;
+        z-index: 3;
         box-shadow: 0 4px 0 rgba(0,0,0,0.4);
       }
       .st-node-icon { line-height: 1; }
@@ -1388,7 +1469,7 @@
       .bs-list-title {
         font-size: 18px; color: #ff4d8a;
         letter-spacing: 3px;
-        display: flex; justify-content: space-between;
+        display: none;
       }
       .bs-list-title .hint { color: #a89878; font-size: 14px; font-family: 'Patrick Hand', sans-serif; font-weight: 400; letter-spacing: 1px; }
       .bs-grid {
@@ -1845,6 +1926,13 @@
         box-shadow: none;
         filter: saturate(0.4);
       }
+      .bs-mini-try:disabled {
+        cursor: not-allowed;
+        border-color: #5a3a35;
+        color: #a89878;
+        box-shadow: none;
+        filter: saturate(0.45);
+      }
       .bs-mini-try.broke .cost-num { color: #a89878; }
 
       /* 강화 초기화 버튼 */
@@ -1943,7 +2031,7 @@
       /* 대장간 — 크림(비활성/미구현 톤). */
       .village-btn.forge   { border-color: #f5e3c8; color: #f5e3c8; opacity: 0.85; }
     </style>
-    <script type="module" crossorigin src="./assets/index-BYVXn5Kh.js"></script>
+    <script type="module" crossorigin src="./assets/index-CivTxZtz.js"></script>
   </head>
   <body>
     <div id="app">
@@ -2097,10 +2185,7 @@
 
           <!-- 곡괭이 목록 그리드 -->
           <section class="bs-list">
-            <div class="bs-list-title">
-              <span>곡괭이 목록</span>
-              <span class="hint">잠김 = 제작 필요</span>
-            </div>
+            <div class="bs-list-title"></div>
             <div class="bs-grid" id="bsGrid"></div>
           </section>
 
@@ -2396,74 +2481,78 @@
           <div class="panel-bg" id="resultPanel">
             <div class="panel">
               <h1 id="resultTitle">결과</h1>
-              <!-- 광석 조각 → 주괴 -->
-              <div class="row result-row">
-                <span class="result-side">
-                  <svg viewBox="0 0 48 40" class="result-chunk-icon">
-                    <path d="M8 28 L4 18 L12 8 L24 4 L36 8 L44 16 L42 28 L32 36 L18 36 Z" fill="#5a5a5a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M14 14 L20 8 L26 12 L20 18 Z" fill="#9a9a9a"/>
-                  </svg>
-                  <b id="resultOreRaw">0</b>
-                </span>
-                <span class="result-arrow">→</span>
-                <span class="result-side">
-                  <svg viewBox="0 0 64 48" class="result-ingot-icon">
-                    <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                  </svg>
-                  <b id="resultStoneNum">0</b>
-                </span>
-              </div>
-              <!-- 루비 조각 → 보석 -->
-              <div class="row result-row">
-                <span class="result-side">
-                  <svg viewBox="0 0 40 48" class="result-chunk-icon">
-                    <path d="M20 4 L8 16 L4 32 L14 44 L26 44 L36 30 L34 14 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M14 12 L22 8 L18 24 Z" fill="#ff7088"/>
-                  </svg>
-                  <b id="resultRubyRaw">0</b>
-                </span>
-                <span class="result-arrow">→</span>
-                <span class="result-side">
-                  <svg viewBox="0 0 56 64" class="result-ingot-icon">
-                    <path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                    <path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
-                  </svg>
-                  <b id="resultRubyNum">0</b>
-                </span>
+              <div class="mining-stats">
+                <div class="result-section-title">채광량</div>
+                <!-- 광석 조각 → 주괴 -->
+                <div class="row result-row">
+                  <span class="result-side">
+                    <svg viewBox="0 0 48 40" class="result-chunk-icon">
+                      <path d="M8 28 L4 18 L12 8 L24 4 L36 8 L44 16 L42 28 L32 36 L18 36 Z" fill="#5a5a5a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M14 14 L20 8 L26 12 L20 18 Z" fill="#9a9a9a"/>
+                    </svg>
+                    <b id="resultOreRaw">0</b>
+                  </span>
+                  <span class="result-arrow">→</span>
+                  <span class="result-side">
+                    <svg viewBox="0 0 64 48" class="result-ingot-icon">
+                      <path d="M10 38 L54 38 L48 44 L16 44 Z" fill="#1f1f1f" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M10 26 L54 26 L54 38 L10 38 Z" fill="#4a4a4a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M16 12 L48 12 L54 26 L10 26 Z" fill="#7a7a7a" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    </svg>
+                    <b id="resultStoneNum">0</b>
+                  </span>
+                </div>
+                <!-- 루비 조각 → 보석 -->
+                <div class="row result-row">
+                  <span class="result-side">
+                    <svg viewBox="0 0 40 48" class="result-chunk-icon">
+                      <path d="M20 4 L8 16 L4 32 L14 44 L26 44 L36 30 L34 14 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M14 12 L22 8 L18 24 Z" fill="#ff7088"/>
+                    </svg>
+                    <b id="resultRubyRaw">0</b>
+                  </span>
+                  <span class="result-arrow">→</span>
+                  <span class="result-side">
+                    <svg viewBox="0 0 56 64" class="result-ingot-icon">
+                      <path d="M8 28 L28 60 L48 28 L28 36 Z" fill="#7a1c28" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M8 28 L8 14 L28 8 L28 36 Z" fill="#c83040" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M48 28 L48 14 L28 8 L28 36 Z" fill="#992430" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                      <path d="M8 14 L28 8 L48 14 L28 18 Z" fill="#ff7088" stroke="#0a0612" stroke-width="2.5" stroke-linejoin="round"/>
+                    </svg>
+                    <b id="resultRubyNum">0</b>
+                  </span>
+                </div>
               </div>
               <div class="damage-stats">
                 <div class="damage-title">피해량</div>
                 <div class="damage-row">
-                  <span class="damage-icon">
-                    <svg viewBox="0 0 48 48">
-                      <path d="M8 30 L30 8 L40 18 L18 40 Z" fill="#f5e3c8" stroke="#0a0612" stroke-width="3" stroke-linejoin="round"/>
-                      <path d="M27 11 L37 21" stroke="#ff8a4a" stroke-width="4" stroke-linecap="round"/>
-                    </svg>
-                  </span>
+                  <span class="damage-icon damage-icon-text">⛏️</span>
+                  <span class="damage-label">곡괭이</span>
+                  <span class="damage-bar-track"><span class="damage-bar" id="resultDmgNormalBar"></span></span>
                   <b class="damage-value" id="resultDmgNormal">0</b>
                 </div>
                 <div class="damage-row">
-                  <span class="damage-icon">
-                    <svg viewBox="0 0 48 48">
-                      <path d="M24 4 L29 18 L44 18 L32 27 L37 42 L24 33 L11 42 L16 27 L4 18 L19 18 Z" fill="#ff8a4a" stroke="#0a0612" stroke-width="3" stroke-linejoin="round"/>
-                      <circle cx="24" cy="24" r="7" fill="#ffd84a"/>
-                    </svg>
+                  <span class="damage-icon damage-icon-combo">
+                    <span class="pick">⛏️</span>
+                    <span class="boom">💥</span>
                   </span>
+                  <span class="damage-label">곡괭이(치명타)</span>
+                  <span class="damage-bar-track"><span class="damage-bar crit" id="resultDmgCritBar"></span></span>
                   <b class="damage-value crit" id="resultDmgCrit">0</b>
                 </div>
                 <div class="damage-row">
-                  <span class="damage-icon">
-                    <svg viewBox="0 0 48 48">
-                      <path d="M28 3 L10 27 L23 27 L18 45 L39 19 L26 19 Z" fill="#6fb0ff" stroke="#0a0612" stroke-width="3" stroke-linejoin="round"/>
-                      <path d="M30 6 L20 22 L29 20" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
-                    </svg>
-                  </span>
+                  <span class="damage-icon damage-icon-text">⚡️</span>
+                  <span class="damage-label">번개</span>
+                  <span class="damage-bar-track"><span class="damage-bar lightning" id="resultDmgLightningBar"></span></span>
                   <b class="damage-value lightning" id="resultDmgLightning">0</b>
                 </div>
+                <div class="damage-row">
+                  <span class="damage-icon damage-icon-text">☄️</span>
+                  <span class="damage-label">운석</span>
+                  <span class="damage-bar-track"><span class="damage-bar lightning" id="resultDmgMeteorBar"></span></span>
+                  <b class="damage-value lightning" id="resultDmgMeteor">0</b>
+                </div>
+                <div class="damage-total"><span>총 피해량</span><b id="resultDmgTotal">0</b></div>
               </div>
               <div class="result-buttons">
                 <button class="btn small-result" id="retryBtn">다시하기</button>
