@@ -676,6 +676,7 @@
       .damage-bar.vein { background: linear-gradient(180deg, #f0caff, #8c4cff); }
       .damage-value {
         justify-self: end;
+        text-align: right;
         font-family: 'Black Han Sans', sans-serif;
         font-size: 32px;
         color: #f5e3c8;
@@ -699,6 +700,141 @@
       .damage-total b {
         color: #f5e3c8;
         font-size: 40px;
+        text-align: right;
+      }
+      .title-reward-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 210;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at 50% 46%, rgba(255,216,74,0.12), transparent 34%),
+          rgba(4,2,8,0.72);
+        backdrop-filter: blur(5px);
+        pointer-events: auto;
+      }
+      .title-reward-overlay.show { display: flex; }
+      .title-reward-card {
+        position: relative;
+        overflow: hidden;
+        width: 820px;
+        min-height: 760px;
+        border: 2px solid rgba(245,227,200,0.44);
+        border-radius: 18px;
+        padding: 58px 54px 48px;
+        box-sizing: border-box;
+        text-align: center;
+        font-family: 'Black Han Sans', sans-serif;
+        color: #f5e3c8;
+        background:
+          radial-gradient(circle at 50% 22%, rgba(255,216,74,0.22), transparent 33%),
+          radial-gradient(circle at 50% 62%, rgba(255,77,138,0.12), transparent 44%),
+          linear-gradient(180deg, rgba(22,13,28,0.98), rgba(8,5,14,0.98));
+        box-shadow:
+          0 18px 0 rgba(0,0,0,0.42),
+          0 0 34px rgba(245,227,200,0.18),
+          inset 0 0 34px rgba(255,216,74,0.045);
+        animation: titleRewardIn 0.34s cubic-bezier(.2,.9,.2,1) both;
+      }
+      .title-reward-card > * { position: relative; z-index: 2; }
+      .title-reward-rays {
+        position: absolute;
+        inset: -30%;
+        z-index: 0;
+        background:
+          conic-gradient(from 0deg, transparent 0 12deg, rgba(255,216,74,0.18) 13deg 18deg, transparent 19deg 42deg, rgba(158,217,236,0.10) 43deg 48deg, transparent 49deg 72deg);
+        opacity: 0.78;
+        animation: titleRewardSpin 8s linear infinite;
+      }
+      .title-reward-shine {
+        position: absolute;
+        left: -20%;
+        top: 18%;
+        width: 140%;
+        height: 22%;
+        z-index: 1;
+        transform: rotate(-10deg);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.16), rgba(255,216,74,0.18), transparent);
+        animation: titleRewardSweep 1.8s ease-in-out infinite;
+      }
+      .title-reward-badge-wrap {
+        width: 184px;
+        height: 184px;
+        margin: 0 auto 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle, rgba(255,216,74,0.24), rgba(255,216,74,0.02) 62%, transparent 72%);
+        filter: drop-shadow(0 8px 0 rgba(0,0,0,0.34));
+      }
+      .title-reward-badge-wrap img {
+        width: 158px;
+        height: 158px;
+        object-fit: contain;
+        image-rendering: auto;
+      }
+      .title-reward-kicker {
+        color: #9ed9ec;
+        font-size: 24px;
+        letter-spacing: 3px;
+        text-shadow: 0 0 10px rgba(158,217,236,0.32);
+        margin-bottom: 12px;
+      }
+      .title-reward-title {
+        font-size: 62px;
+        line-height: 1.14;
+        color: #ffdf5a;
+        text-shadow:
+          0 4px 0 rgba(0,0,0,0.42),
+          0 0 18px rgba(255,216,74,0.42);
+        letter-spacing: 1px;
+      }
+      .title-reward-body {
+        margin: 34px 0 22px;
+        padding: 28px 30px;
+        border-top: 1px solid rgba(245,227,200,0.18);
+        border-bottom: 1px solid rgba(245,227,200,0.18);
+        color: #f5e3c8;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+        font-weight: 850;
+        font-size: 31px;
+        line-height: 1.48;
+        word-break: keep-all;
+      }
+      .title-reward-body p { margin: 0; }
+      .title-reward-body p + p { margin-top: 8px; }
+      .title-reward-thanks {
+        color: rgba(245,227,200,0.72);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+        font-size: 23px;
+        font-weight: 800;
+        margin-bottom: 34px;
+      }
+      .title-reward-tap {
+        color: rgba(245,227,200,0.66);
+        font-family: 'Black Han Sans', sans-serif;
+        font-size: 28px;
+        animation: titleRewardTap 1.2s ease-in-out infinite;
+      }
+      @keyframes titleRewardIn {
+        from { opacity: 0; transform: translateY(24px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes titleRewardSpin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes titleRewardSweep {
+        0%, 100% { opacity: 0; transform: translateX(-18%) rotate(-10deg); }
+        35%, 55% { opacity: 1; }
+        80% { opacity: 0; transform: translateX(18%) rotate(-10deg); }
+      }
+      @keyframes titleRewardTap {
+        0%, 100% { opacity: 0.45; }
+        50% { opacity: 0.86; }
       }
       .btn {
         display: block; width: 100%;
@@ -1334,16 +1470,16 @@
         overflow: hidden;
         width: 900px;
         max-height: 1420px;
-        border: 3px solid #ffd84a;
+        border: 2px solid rgba(245,227,200,0.36);
         border-radius: 18px;
         background:
-          radial-gradient(circle at 18% 8%, rgba(255,216,74,0.16), transparent 24%),
+          radial-gradient(circle at 18% 8%, rgba(245,227,200,0.09), transparent 24%),
           radial-gradient(circle at 55% 42%, rgba(255,77,138,0.08), transparent 34%),
           linear-gradient(180deg, rgba(20,13,24,0.98), rgba(10,6,18,0.98));
         box-shadow:
-          0 0 22px rgba(255,216,74,0.28),
+          0 0 20px rgba(245,227,200,0.15),
           0 14px 0 rgba(0,0,0,0.42),
-          inset 0 0 30px rgba(255,216,74,0.035);
+          inset 0 0 30px rgba(245,227,200,0.035);
         padding: 34px 34px 40px;
         font-family: 'Black Han Sans', sans-serif;
         color: #f5e3c8;
@@ -1397,16 +1533,16 @@
         box-shadow: inset -18px -22px 0 rgba(0,0,0,0.13), 0 0 12px rgba(0,0,0,0.45);
       }
       .ranking-planet-btn.active {
-        border-color: #ffd84a;
+        border-color: rgba(245,227,200,0.86);
         box-shadow:
           inset -18px -22px 0 rgba(0,0,0,0.13),
-          0 0 0 2px rgba(255,240,168,0.38),
-          0 0 22px rgba(255,216,74,0.68);
+          0 0 0 2px rgba(245,227,200,0.24),
+          0 0 20px rgba(245,227,200,0.32);
       }
       .ranking-table-head,
       .ranking-row {
         display: grid;
-        grid-template-columns: 110px 1fr 250px;
+        grid-template-columns: 110px 56px minmax(0, 1fr) 250px;
         align-items: center;
         gap: 18px;
       }
@@ -1417,9 +1553,13 @@
         font-size: 27px;
         padding: 14px 20px;
         margin-bottom: 4px;
-        border: 1px solid rgba(255,216,74,0.24);
+        border: 1px solid rgba(245,227,200,0.20);
         border-radius: 10px;
-        background: linear-gradient(180deg, rgba(255,216,74,0.10), rgba(245,227,200,0.018));
+        background: linear-gradient(180deg, rgba(245,227,200,0.08), rgba(245,227,200,0.018));
+      }
+      .ranking-table-head span:last-child {
+        justify-self: end;
+        text-align: right;
       }
       .ranking-rows {
         min-height: 920px;
@@ -1436,13 +1576,35 @@
         color: #ffd84a;
         font-size: 34px;
       }
-      .ranking-row span {
+      .ranking-badge-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+      }
+      .ranking-row .ranking-name {
+        min-width: 0;
+        display: flex;
+        align-items: center;
         overflow: hidden;
         white-space: nowrap;
-        text-overflow: ellipsis;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
         font-weight: 900;
         color: #f5e3c8;
+      }
+      .ranking-title-badge {
+        flex: 0 0 auto;
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 0 rgba(0,0,0,0.42)) drop-shadow(0 0 5px rgba(255,216,74,0.26));
+      }
+      .ranking-row .ranking-name em {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-style: normal;
       }
       .ranking-row strong {
         justify-self: end;
@@ -1827,12 +1989,12 @@
         --card-aura:rgba(255,77,77,0.50);
       }
       .acc-card.rarity-unique {
-        --rarity:#ffad38;
-        --card-bg1:#8a4f12;
-        --card-bg2:#2b1504;
-        --card-top:rgba(255,189,84,0.28);
-        --card-core:rgba(255,173,56,0.25);
-        --card-aura:rgba(255,173,56,0.52);
+        --rarity:#ff7a1a;
+        --card-bg1:#a13d08;
+        --card-bg2:#2a0b02;
+        --card-top:rgba(255,151,45,0.34);
+        --card-core:rgba(255,112,24,0.32);
+        --card-aura:rgba(255,88,15,0.64);
       }
       .acc-card.rarity-epic {
         box-shadow:
@@ -1859,12 +2021,49 @@
           inset 0 -10px 18px rgba(0,0,0,0.26);
       }
       .acc-card.rarity-unique {
-        box-shadow:
-          0 4px 0 rgba(0,0,0,0.34),
-          0 0 0 2px rgba(255,173,56,0.44),
-          0 0 20px rgba(255,173,56,0.46),
-          inset 0 0 0 2px rgba(255,239,190,0.11),
-          inset 0 -10px 18px rgba(0,0,0,0.26);
+        background:
+          radial-gradient(circle at 50% 52%, rgba(255,237,178,0.42) 0 13%, rgba(255,122,26,0.72) 19% 48%, transparent 72%),
+          conic-gradient(from -18deg at 50% 50%, rgba(255,126,28,0.36) 0 20deg, transparent 21deg 48deg, rgba(255,196,72,0.26) 49deg 66deg, transparent 67deg 96deg, rgba(255,98,18,0.32) 97deg 118deg, transparent 119deg 155deg, rgba(255,174,48,0.25) 156deg 176deg, transparent 177deg 222deg, rgba(255,118,24,0.34) 223deg 245deg, transparent 246deg 296deg, rgba(255,205,86,0.23) 297deg 318deg, transparent 319deg 360deg),
+          linear-gradient(180deg, rgba(255,151,45,0.34), transparent 42%),
+          linear-gradient(145deg, #a13d08, #2a0b02 62%, #08050d 100%),
+          #0a0612;
+          box-shadow:
+            0 4px 0 rgba(0,0,0,0.34),
+            0 0 0 2px rgba(255,122,26,0.70),
+            0 0 24px rgba(255,122,26,0.62),
+            0 0 48px rgba(255,74,14,0.30),
+            inset 0 0 0 2px rgba(255,236,184,0.18),
+            inset 0 0 18px rgba(255,112,24,0.26),
+            inset 0 -10px 18px rgba(0,0,0,0.26);
+        animation: accUniquePulse 2.15s ease-in-out infinite;
+      }
+      .acc-card.rarity-unique::before {
+        inset: 7px;
+        height: auto;
+        border: 2px solid rgba(255,206,102,0.26);
+        border-radius: 12px;
+        background:
+          radial-gradient(circle at 50% 50%, transparent 0 43%, rgba(255,188,74,0.25) 44% 48%, transparent 55%),
+          linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,122,26,0.04));
+        opacity: 0.95;
+        mix-blend-mode: screen;
+        animation: accUniqueAura 1.8s ease-in-out infinite;
+      }
+      .acc-card.rarity-unique::after {
+        content: '◆';
+        color: #ffe8a6;
+        font-size: 19px;
+        text-shadow:
+          0 0 8px rgba(255,122,26,0.95),
+          0 0 14px rgba(255,74,14,0.55);
+      }
+      @keyframes accUniquePulse {
+        0%, 100% { filter: saturate(1.08) brightness(1); }
+        50% { filter: saturate(1.28) brightness(1.08); }
+      }
+      @keyframes accUniqueAura {
+        0%, 100% { opacity: 0.72; transform: scale(0.98); }
+        50% { opacity: 1; transform: scale(1.03); }
       }
       .acc-card.selected {
         outline: 4px solid #ff7a3d;
@@ -2044,7 +2243,7 @@
       .acc-draw-popup.rarity-epic, .acc-synth.rarity-epic { --pop:#c07cff; }
       .acc-draw-popup.rarity-legendary, .acc-synth.rarity-legendary { --pop:#ffd84a; }
       .acc-draw-popup.rarity-transcendent, .acc-synth.rarity-transcendent { --pop:#ff4d4d; }
-      .acc-draw-popup.rarity-unique, .acc-synth.rarity-unique { --pop:#ffad38; }
+      .acc-draw-popup.rarity-unique, .acc-synth.rarity-unique { --pop:#ff7a1a; }
       .acc-popup-rank { height: 66px; color: var(--pop); font-size: 54px; text-shadow: 0 0 14px var(--pop); }
       .acc-popup-name { height: 48px; color: #fff0d8; font-size: 36px; margin-top: 10px; }
       .acc-popup-stage { flex: 1; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
@@ -3928,14 +4127,14 @@
       /* 대장간 — 크림(비활성/미구현 톤). */
       .village-btn.forge   { border-color: #f5e3c8; color: #f5e3c8; opacity: 0.85; }
     </style>
-    <script type="module" crossorigin src="./assets/index-BlSNgczm.js"></script>
+    <script type="module" crossorigin src="./assets/index-BnmCMd4-.js"></script>
   </head>
   <body>
     <div id="app">
       <div id="stage">
         <!-- Login Screen — 배경 이미지에 타이틀/행성/캐릭터 포함됨. -->
         <div id="loginScreen">
-          <div class="login-version">v1.0</div>
+          <div class="login-version">v1.01</div>
           <div class="login-studio">내떡진 게임즈</div>
           <!-- 에러/상태 토스트 — 로그인 박스 위에 검정 라운드 박스로 떠있음. -->
           <div class="login-toast" id="loginToastWrap">
@@ -4334,7 +4533,7 @@
                 <button class="ranking-close" id="rankingClose">×</button>
               </div>
               <div class="ranking-stage-tabs" id="rankingStageTabs"></div>
-              <div class="ranking-table-head"><span>순위</span><span>닉네임</span><span>데미지</span></div>
+              <div class="ranking-table-head"><span>순위</span><span></span><span>닉네임</span><span>데미지</span></div>
               <div class="ranking-rows" id="rankingRows"></div>
             </div>
           </div>
@@ -4524,6 +4723,8 @@
           <div class="augment-overlay hidden" id="augmentOverlay">
             <div class="augment-cards" id="augmentCards"></div>
           </div>
+
+          <div class="title-reward-overlay" id="titleRewardOverlay"></div>
 
           <!-- Joystick (생성/제거는 JS) -->
           <div class="joystick-base" id="joystickBase" style="opacity:0"></div>
